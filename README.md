@@ -1,12 +1,64 @@
 # nhb_results_app
 
-A new Flutter project.
+A Flutter application to retrieve match results for the Nyon Handball - La Cote and generate png images to be shared on social media.
 
-## Getting Started
+## High level information
 
-This project is a starting point for a Flutter application.
+### Image templates
 
-A few resources to get you started if this is your first Flutter project:
+The images are created based on a set of svg templates. Currently, only one template is available, others will be included later on. The SVGs files will have ids for specific strings to be replaced by real data.
+
+### Data retrieval
+
+The match results will be retrieved from the official website of the Swiss Handball Federation (FSH). The exact url and parsing will be defined later.
+
+### Names replacement
+
+The official team names sometime does not fit in the templates, or some teams are better known but a different name. Some replacement strings will be provided later.
+
+## Install and run
+
+### Development Tools Required
+
+- **Flutter SDK**: Compatible with Dart SDK ^3.5.3
+- **Dart SDK**: ^3.5.3
+- **Android Studio** or **VS Code**: For development environment
+- **Xcode**: Required for iOS development
+- **Git**: For version control
+
+### Installation Links
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install)
+- [Dart SDK](https://dart.dev/get-dart)
+- [Android Studio](https://developer.android.com/studio)
+- [VS Code](https://code.visualstudio.com/download)
+- [Xcode](https://developer.apple.com/xcode/) (macOS only)
+- [Git](https://git-scm.com/downloads)
+
+### Setup Instructions
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/nhb_results_app.git
+
+# Navigate to project directory
+cd nhb_results_app
+
+# Install dependencies
+flutter pub get
+```
+
+### Running the App
+
+This project supports multiple platforms. For platform-specific instructions, refer to the official Flutter documentation:
+
+- [Run on Android](https://docs.flutter.dev/get-started/test-drive?tab=androidstudio#run-the-app)
+- [Run on iOS](https://docs.flutter.dev/get-started/test-drive?tab=androidstudio#run-the-app-on-ios)
+- [Run on Web](https://docs.flutter.dev/get-started/web)
+- [Run on Desktop](https://docs.flutter.dev/desktop)
+
+
+## Flutter resources for reference
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
