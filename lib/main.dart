@@ -19,42 +19,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
-      //home: const CenteredImage(),
-      //home: const WebViewApp(),
       home: const SvgImage(),
     );
-  }
-}
-
-class CenteredImage extends StatelessWidget {
-  const CenteredImage({super.key});
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('My Home Page'),
-        ),
-        body: Center(
-          child: Builder(
-            builder: (context) {
-              return Column(
-                children: [
-                  const Text('Hello, World!'),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      print('Click!');
-                    },
-                    child: const Text('A button'),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      );
   }
 }
 
