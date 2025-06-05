@@ -1,5 +1,5 @@
 name: nhb_results_app
-description: "A new Flutter project."
+description: "App to generate NHB match result images."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -41,7 +41,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   #flutter_svg: ^2.0.5
   #jovial_svg: ^1.1.23
-  webview_flutter: ^4.10.0
   html_to_image: ^1.0.0+1
   flutter_image_gallery_saver: ^0.0.2
   path_provider: ^2.1.5

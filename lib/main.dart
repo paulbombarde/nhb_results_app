@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 //import 'package:jovial_svg/jovial_svg.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:html_to_image/html_to_image.dart';
 
 import 'package:flutter_image_gallery_saver/flutter_image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
-
-import 'src/menu.dart';
-import 'src/web_view_stack.dart';
-import 'src/navigation_controls.dart';
 
 
 void main() async {
@@ -153,34 +148,3 @@ class ImageControls extends StatelessWidget {
   }
 }
 
-class WebViewApp extends StatefulWidget {
-  const WebViewApp({super.key});
-
-  @override
-  State<WebViewApp> createState() => _WebViewAppState();
-}
-
-class _WebViewAppState extends State<WebViewApp> {
-  late final WebViewController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = WebViewController()
-    ..loadFlutterAsset('assets/www/results_h1.svg');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flutter WebView'),
-        actions: [
-          NavigationControls(controller: controller),
-          Menu(controller: controller),
-        ],
-      ),
-      body: WebViewStack(controller: controller),
-    );
-  }
-}
