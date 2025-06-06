@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
+import 'package:flutter/foundation.dart' as foundation;
 //import 'package:jovial_svg/jovial_svg.dart';
 import 'package:html_to_image/html_to_image.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+import 'dart:async';
 
-import 'package:flutter_image_gallery_saver/flutter_image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 
 
@@ -71,6 +75,31 @@ class _SvgImageState extends State<SvgImage> {
     });
   }
 
+  // Method to share the current image
+  Future<void> shareImage() async {
+    if (img == null) {
+      // No image to share
+      return;
+    }
+
+    try {
+      // Get temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/nhb_result_image.png');
+      
+      // Write image data to file
+      await file.writeAsBytes(img!);
+      
+      // Share the file
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'NHB Match Result',
+      );
+    } catch (e) {
+      debugPrint('Error sharing image: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if(img == null){
@@ -81,7 +110,7 @@ class _SvgImageState extends State<SvgImage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text('HTML to Image Converter'),
-          actions: [ImageControls(img_state: this)]
+          actions: [ImageControls(imgState: this)]
         ),
         body: 
             Center(
@@ -95,9 +124,16 @@ class _SvgImageState extends State<SvgImage> {
 }
 
 class ImageControls extends StatelessWidget {
-  const ImageControls({required this.img_state, super.key});
+  const ImageControls({required this.imgState, super.key});
 
-  final _SvgImageState img_state;
+  final _SvgImageState imgState;
+
+  // Check if the current platform is mobile (iOS or Android)
+  bool get _isMobilePlatform {
+    return !kIsWeb &&
+           (defaultTargetPlatform == foundation.TargetPlatform.iOS ||
+            defaultTargetPlatform == foundation.TargetPlatform.android);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,9 +142,23 @@ class ImageControls extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.replay),
           onPressed: () {
-            img_state.convertToImageFromAsset();
+            imgState.convertToImageFromAsset();
           },
         ),
+        // Only show share button on mobile platforms
+        if (_isMobilePlatform)
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () {
+              if (imgState.img != null) {
+                imgState.shareImage();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No image to share')),
+                );
+              }
+            },
+          ),
       ],
     );
   }
