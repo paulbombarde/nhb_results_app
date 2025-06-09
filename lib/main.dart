@@ -1,14 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart' as foundation;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
-import 'package:flutter/foundation.dart' as foundation;
-//import 'package:jovial_svg/jovial_svg.dart';
 import 'package:html_to_image/html_to_image.dart';
-import 'package:share_plus/share_plus.dart';
-import 'dart:io';
-import 'dart:async';
-
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 
 void main() async {
@@ -17,7 +15,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
 
   @override
   Widget build(BuildContext context) {
@@ -37,33 +34,6 @@ class SvgImage extends StatefulWidget{
 
 class _SvgImageState extends State<SvgImage> {
   Uint8List? img;
-
-  static const _dummyContent = '''
-  <html>
-  <head>
-  <title>
-  Example of Paragraph tag
-  </title>
-  </head>
-  <body>
-  <p> <!-- It is a Paragraph tag for creating the paragraph -->
-  <b> HTML </b> stands for <i> <u> Hyper Text Markup Language. </u> </i> It is used to create a web pages and applications. This language
-  is easily understandable by the user and also be modifiable. It is actually a Markup language, hence it provides a flexible way for designing the
-  web pages along with the text.
-  <img src="https://picsum.photos/200/300" />
-  <br />
-  </body>
-  </html>
-  ''';
-
-  Future<void> convertToImage() async {
-    final image = await HtmlToImage.tryConvertToImage(
-      content: _dummyContent,
-    );
-    setState(() {
-      img = image;
-    });
-  }
 
   Future<void> convertToImageFromAsset() async {
     final image = await HtmlToImage.convertToImageFromAsset(
@@ -104,7 +74,6 @@ class _SvgImageState extends State<SvgImage> {
   Widget build(BuildContext context) {
     if(img == null){
       convertToImageFromAsset();
-      //convertToImage();
     }
 
     return Scaffold(
