@@ -114,8 +114,7 @@ class _SvgImageState extends State<SvgImage> {
 </html>''';
   }
 
-  Future<void> refreshImage() async {
-    try {
+  Future<Uint8List?> convertSvg() async {
       // Load SVG content from assets into memory
       final svgContent =
           await rootBundle.loadString('assets/www/results_h1.svg');
@@ -123,11 +122,30 @@ class _SvgImageState extends State<SvgImage> {
       // Wrap SVG content in HTML with proper font references
       final htmlContent = _htmlWrapper(svgContent);
 
-      final image = await HtmlToImage.tryConvertToImage(
+      return HtmlToImage.tryConvertToImage(
           content: htmlContent, width: imgSize);
+  }
 
+  Uint8List cropImage(Uint8List initialImage) {
+      final decodedImage = im.decodeImage(initialImage);
+
+      // Crop the image to remove white banner at the bottom
+      // Maintain original width but crop height to imgSize (1080px)
+      final croppedImg = im.copyCrop(decodedImage!,
+        x: 0,
+        y: 0,
+        width: decodedImage!.width,
+        height: decodedImage!.width
+      );
+      
+      return im.encodePng(croppedImg);
+  }
+
+  Future<void> refreshImage() async {
+    try {
+      final image = await convertSvg();
       setState(() {
-        img = image;
+        img = cropImage(image!);
       });
     } catch (e) {
       debugPrint('Error loading SVG from asset: $e');
@@ -149,11 +167,8 @@ class _SvgImageState extends State<SvgImage> {
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/nhb_result_image.png');
 
-      final rawImg = im.decodeImage(img!);
-      final pngImg = im.encodePng(rawImg!);
-
       // Write image data to file
-      await file.writeAsBytes(pngImg!);
+      await file.writeAsBytes(img!);
 
       // Share the file
       await Share.shareXFiles(
