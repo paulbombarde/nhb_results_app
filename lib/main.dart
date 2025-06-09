@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:html_to_image/html_to_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:image/image.dart' as im;
 
 void main() async {
   runApp(const MyApp());
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SvgImage extends StatefulWidget{
+class SvgImage extends StatefulWidget {
   const SvgImage({super.key});
 
   @override
@@ -34,15 +34,107 @@ class SvgImage extends StatefulWidget{
 
 class _SvgImageState extends State<SvgImage> {
   Uint8List? img;
+  final int imgSize = 1080;
 
-  Future<void> convertToImageFromAsset() async {
-    final image = await HtmlToImage.convertToImageFromAsset(
-      asset: 'assets/www/results_h1.svg',
-      width: 1080
-    );
-    setState(() {
-      img = image;
-    });
+  /// Creates an HTML wrapper with proper font references for SVG content
+  String _htmlWrapper(String svgContent) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 100;
+      src: url('assets/fonts/BarlowCondensed-Thin.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 200;
+      src: url('assets/fonts/BarlowCondensed-ExtraLight.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 300;
+      src: url('assets/fonts/BarlowCondensed-Light.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 400;
+      src: url('assets/fonts/BarlowCondensed-Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 500;
+      src: url('assets/fonts/BarlowCondensed-Medium.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 600;
+      src: url('assets/fonts/BarlowCondensed-SemiBold.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 700;
+      src: url('assets/fonts/BarlowCondensed-Bold.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 800;
+      src: url('assets/fonts/BarlowCondensed-ExtraBold.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 900;
+      src: url('assets/fonts/BarlowCondensed-Black.ttf') format('truetype');
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Barlow Condensed', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="svg-container">
+  $svgContent
+  </div>
+</body>
+</html>''';
+  }
+
+  Future<void> refreshImage() async {
+    try {
+      // Load SVG content from assets into memory
+      final svgContent =
+          await rootBundle.loadString('assets/www/results_h1.svg');
+
+      // Wrap SVG content in HTML with proper font references
+      final htmlContent = _htmlWrapper(svgContent);
+
+      final image = await HtmlToImage.tryConvertToImage(
+          content: htmlContent, width: imgSize);
+
+      setState(() {
+        img = image;
+      });
+    } catch (e) {
+      debugPrint('Error loading SVG from asset: $e');
+      setState(() {
+        img = null;
+      });
+    }
   }
 
   // Method to share the current image
@@ -56,10 +148,13 @@ class _SvgImageState extends State<SvgImage> {
       // Get temporary directory
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/nhb_result_image.png');
-      
+
+      final rawImg = im.decodeImage(img!);
+      final pngImg = im.encodePng(rawImg!);
+
       // Write image data to file
-      await file.writeAsBytes(img!);
-      
+      await file.writeAsBytes(pngImg!);
+
       // Share the file
       await Share.shareXFiles(
         [XFile(file.path)],
@@ -72,23 +167,15 @@ class _SvgImageState extends State<SvgImage> {
 
   @override
   Widget build(BuildContext context) {
-    if(img == null){
-      convertToImageFromAsset();
+    if (img == null) {
+      refreshImage();
     }
 
     return Scaffold(
         appBar: AppBar(
-          title: const Text('HTML to Image Converter'),
-          actions: [ImageControls(imgState: this)]
-        ),
-        body: 
-            Center(
-                child: 
-        img == null ?
-                  Text("wait")
-            : Image.memory(img!)
-              )
-      );
+            title: const Text('HTML to Image Converter'),
+            actions: [ImageControls(imgState: this)]),
+        body: img == null ? Text("wait") : Image.memory(img!));
   }
 }
 
@@ -100,7 +187,7 @@ class ImageControls extends StatelessWidget {
   // Check if the current platform is mobile (iOS or Android)
   bool get _isMobilePlatform {
     return !kIsWeb &&
-           (defaultTargetPlatform == foundation.TargetPlatform.iOS ||
+        (defaultTargetPlatform == foundation.TargetPlatform.iOS ||
             defaultTargetPlatform == foundation.TargetPlatform.android);
   }
 
@@ -111,7 +198,7 @@ class ImageControls extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.replay),
           onPressed: () {
-            imgState.convertToImageFromAsset();
+            imgState.refreshImage();
           },
         ),
         // Only show share button on mobile platforms
@@ -132,4 +219,3 @@ class ImageControls extends StatelessWidget {
     );
   }
 }
-
