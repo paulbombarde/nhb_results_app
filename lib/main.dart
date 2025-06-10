@@ -8,6 +8,7 @@ import 'package:html_to_image/html_to_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image/image.dart' as im;
+import 'match.dart';
 
 void main() async {
   runApp(const MyApp());
@@ -20,13 +21,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(useMaterial3: true),
-      home: const SvgImage(),
+      home: SvgImage(),
     );
   }
 }
 
 class SvgImage extends StatefulWidget {
-  const SvgImage({super.key});
+  SvgImage({super.key});
+
+  final Match dummyMatch = Match(
+    time: "15:30",
+    place: "Stadium A",
+    level: "Premier League",
+    team1: "Team Alpha",
+    team2: "Team Beta",
+  );
 
   @override
   State<SvgImage> createState() => _SvgImageState();
