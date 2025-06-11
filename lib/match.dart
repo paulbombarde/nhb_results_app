@@ -1,5 +1,5 @@
 class Match {
-  final String time;
+  final String date;
   final String place;
   final String level;
   final String team1;
@@ -8,7 +8,7 @@ class Match {
   final String score2;
 
   Match({
-    required this.time,
+    required this.date,
     required this.place,
     required this.level,
     required this.team1,

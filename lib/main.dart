@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -30,15 +31,62 @@ class MyApp extends StatelessWidget {
 class SvgImage extends StatefulWidget {
   SvgImage({super.key});
 
-  final Match dummyMatch = Match(
-    time: "15:30",
-    place: "Stadium A",
-    level: "Premier League",
-    team1: "Team Alpha",
-    team2: "Team Beta",
-    score1: "10",
-    score2: "20",
-  );
+  final List<Match> dummyMatches = [
+    Match(
+      date: "Samedi 10 Septembre",
+      place: "Stadium A",
+      level: "Premier League",
+      team1: "Team Alpha",
+      team2: "Team Beta",
+      score1: "10",
+      score2: "20",
+    ),
+    Match(
+      date: "Samedi 10 Septembre",
+      place: "Arena Central",
+      level: "Championship",
+      team1: "Lions FC",
+      team2: "Eagles United",
+      score1: "25",
+      score2: "18",
+    ),
+    Match(
+      date: "Samedi 10 Septembre",
+      place: "Sports Complex B",
+      level: "Division 1",
+      team1: "Thunder Bolts",
+      team2: "Storm Riders",
+      score1: "32",
+      score2: "28",
+    ),
+    Match(
+      date: "Dimanche 11 Septembre",
+      place: "Metropolitan Stadium",
+      level: "Premier League",
+      team1: "Fire Dragons",
+      team2: "Ice Wolves",
+      score1: "15",
+      score2: "22",
+    ),
+    Match(
+      date: "Dimanche 11 Septembre",
+      place: "Victory Arena",
+      level: "Championship",
+      team1: "Golden Hawks",
+      team2: "Silver Sharks",
+      score1: "41",
+      score2: "35",
+    ),
+    Match(
+      date: "Dimanche 11 Septembre",
+      place: "Elite Sports Center",
+      level: "Division 1",
+      team1: "Crimson Tigers",
+      team2: "Azure Panthers",
+      score1: "29",
+      score2: "31",
+    ),
+  ];
 
   @override
   State<SvgImage> createState() => _SvgImageState();
@@ -126,13 +174,13 @@ class _SvgImageState extends State<SvgImage> {
 </html>''';
   }
 
-  Future<Uint8List?> convertSvg(Match match) async {
+  Future<Uint8List?> convertSvg(String template, List<Match> matches) async {
       // Load SVG content from assets into memory
       final svgContent =
-          await rootBundle.loadString('assets/www/results_h1.svg');
+          await rootBundle.loadString(template);
 
       // Parse SVG as XML and replace text elements based on inkscape:label attributes
-      final modifiedSvgContent = _replaceSvgTextElements(svgContent, match);
+      final modifiedSvgContent = _replaceSvgTextElements(svgContent, matches);
 
       // Wrap SVG content in HTML with proper font references
       final htmlContent = _htmlWrapper(modifiedSvgContent);
@@ -149,15 +197,15 @@ class _SvgImageState extends State<SvgImage> {
       final croppedImg = im.copyCrop(decodedImage!,
         x: 0,
         y: 0,
-        width: decodedImage!.width,
-        height: decodedImage!.width
+        width: decodedImage.width,
+        height: decodedImage.width
       );
       
       return im.encodePng(croppedImg);
   }
 
   /// Replaces text elements in SVG based on their inkscape:label attributes
-  String _replaceSvgTextElements(String svgContent, Match match) {
+  String _replaceSvgTextElements(String svgContent, List<Match> matches) {
     try {
       final document = XmlDocument.parse(svgContent);
       
@@ -169,24 +217,40 @@ class _SvgImageState extends State<SvgImage> {
         final label = textElement.getAttribute('inkscape:label');
         String? replacementText;
         
-        // Map inkscape:label values to match data
-        switch (label) {
-          case 'match1-team1':
-            replacementText = match.team1;
-            break;
-          case 'match1-team2':
-            replacementText = match.team2;
-            break;
-          case 'match1-score1':
-            replacementText = match.score1;
-            break;
-          case 'match1-score2':
-            replacementText = match.score2;
-            break;
-          case 'date':
-            // Format the date/time from match data
-            replacementText = '${match.time} - ${match.place}';
-            break;
+        // Handle date field using the first match
+        if (label == 'date' && matches.isNotEmpty) {
+          replacementText = matches[0].date;
+        } else if (label != null && label.startsWith('match')) {
+          // Parse match number from label (e.g., 'match1-team1' -> matchNumber = 1)
+          final parts = label.split('-');
+          if (parts.length == 2) {
+            final matchPrefix = parts[0]; // e.g., 'match1'
+            final fieldName = parts[1];   // e.g., 'team1'
+            
+            // Extract match number from prefix (e.g., 'match1' -> 1)
+            final matchNumberStr = matchPrefix.replaceFirst('match', '');
+            final matchNumber = int.tryParse(matchNumberStr);
+            
+            if (matchNumber != null && matchNumber >= 1 && matchNumber <= matches.length) {
+              final match = matches[matchNumber - 1]; // Convert to 0-based index
+              
+              // Map field names to match properties
+              switch (fieldName) {
+                case 'team1':
+                  replacementText = match.team1;
+                  break;
+                case 'team2':
+                  replacementText = match.team2;
+                  break;
+                case 'score1':
+                  replacementText = match.score1;
+                  break;
+                case 'score2':
+                  replacementText = match.score2;
+                  break;
+              }
+            }
+          }
         }
         
         if (replacementText != null) {
@@ -206,11 +270,27 @@ class _SvgImageState extends State<SvgImage> {
     }
   }
 
+  Future<Uint8List?> generateImageData(String template, List<Match> matches) async {
+      final image = await convertSvg(template, matches);
+      return cropImage(image!);
+  }
+
+  /// Selects a random subset of matches (up to 4 matches) from the available dummy matches
+  List<Match> _getRandomMatches(int numMatches) {
+    final random = Random();
+    final availableMatches = List<Match>.from(widget.dummyMatches);
+    
+    // Shuffle the list and take the first numMatches
+    availableMatches.shuffle(random);
+    return availableMatches.take(numMatches).toList();
+  }
+
   Future<void> refreshImage() async {
     try {
-      final image = await convertSvg(widget.dummyMatch);
+      final randomMatches = _getRandomMatches(4);
+      final image = await generateImageData('assets/www/results_4.svg', randomMatches);
       setState(() {
-        img = cropImage(image!);
+        img = image;
       });
     } catch (e) {
       debugPrint('Error loading SVG from asset: $e');
