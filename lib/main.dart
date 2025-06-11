@@ -8,6 +8,7 @@ import 'package:html_to_image/html_to_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image/image.dart' as im;
+import 'package:xml/xml.dart';
 import 'match.dart';
 
 void main() async {
@@ -35,6 +36,8 @@ class SvgImage extends StatefulWidget {
     level: "Premier League",
     team1: "Team Alpha",
     team2: "Team Beta",
+    score1: "10",
+    score2: "20",
   );
 
   @override
@@ -116,20 +119,23 @@ class _SvgImageState extends State<SvgImage> {
   </style>
 </head>
 <body>
-  <div class="svg-container">
+  <div class="svg-container" width=1080>
   $svgContent
   </div>
 </body>
 </html>''';
   }
 
-  Future<Uint8List?> convertSvg() async {
+  Future<Uint8List?> convertSvg(Match match) async {
       // Load SVG content from assets into memory
       final svgContent =
           await rootBundle.loadString('assets/www/results_h1.svg');
 
+      // Parse SVG as XML and replace text elements based on inkscape:label attributes
+      final modifiedSvgContent = _replaceSvgTextElements(svgContent, match);
+
       // Wrap SVG content in HTML with proper font references
-      final htmlContent = _htmlWrapper(svgContent);
+      final htmlContent = _htmlWrapper(modifiedSvgContent);
 
       return HtmlToImage.tryConvertToImage(
           content: htmlContent, width: imgSize);
@@ -150,9 +156,59 @@ class _SvgImageState extends State<SvgImage> {
       return im.encodePng(croppedImg);
   }
 
+  /// Replaces text elements in SVG based on their inkscape:label attributes
+  String _replaceSvgTextElements(String svgContent, Match match) {
+    try {
+      final document = XmlDocument.parse(svgContent);
+      
+      // Find all text elements with inkscape:label attributes
+      final textElements = document.findAllElements('text')
+          .where((element) => element.getAttribute('inkscape:label') != null);
+      
+      for (final textElement in textElements) {
+        final label = textElement.getAttribute('inkscape:label');
+        String? replacementText;
+        
+        // Map inkscape:label values to match data
+        switch (label) {
+          case 'match1-team1':
+            replacementText = match.team1;
+            break;
+          case 'match1-team2':
+            replacementText = match.team2;
+            break;
+          case 'match1-score1':
+            replacementText = match.score1;
+            break;
+          case 'match1-score2':
+            replacementText = match.score2;
+            break;
+          case 'date':
+            // Format the date/time from match data
+            replacementText = '${match.time} - ${match.place}';
+            break;
+        }
+        
+        if (replacementText != null) {
+          // Find the tspan element within the text element and replace its content
+          final tspanElement = textElement.findElements('tspan').firstOrNull;
+          if (tspanElement != null) {
+            tspanElement.innerText = replacementText;
+          }
+        }
+      }
+      
+      return document.toXmlString();
+    } catch (e) {
+      debugPrint('Error parsing/modifying SVG: $e');
+      // Return original content if parsing fails
+      return svgContent;
+    }
+  }
+
   Future<void> refreshImage() async {
     try {
-      final image = await convertSvg();
+      final image = await convertSvg(widget.dummyMatch);
       setState(() {
         img = cropImage(image!);
       });
