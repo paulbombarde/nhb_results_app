@@ -89,10 +89,10 @@ class SvgImage extends StatefulWidget {
   ];
 
   @override
-  State<SvgImage> createState() => _SvgImageState();
+  State<SvgImage> createState() => SvgImageState();
 }
 
-class _SvgImageState extends State<SvgImage> {
+class SvgImageState extends State<SvgImage> {
   Uint8List? img;
   final int imgSize = 1080;
 
@@ -316,10 +316,10 @@ class _SvgImageState extends State<SvgImage> {
       await file.writeAsBytes(img!);
 
       // Share the file
-      await Share.shareXFiles(
-        [XFile(file.path)],
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
         text: 'NHB Match Result',
-      );
+      ));
     } catch (e) {
       debugPrint('Error sharing image: $e');
     }
@@ -342,7 +342,7 @@ class _SvgImageState extends State<SvgImage> {
 class ImageControls extends StatelessWidget {
   const ImageControls({required this.imgState, super.key});
 
-  final _SvgImageState imgState;
+  final SvgImageState imgState;
 
   // Check if the current platform is mobile (iOS or Android)
   bool get _isMobilePlatform {
