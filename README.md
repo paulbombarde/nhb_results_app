@@ -6,11 +6,12 @@ A Flutter application to retrieve match results for the Nyon Handball - La Cote 
 
 ### Image templates
 
-The images are created based on a set of svg templates. Currently, only one template is available, others will be included later on. The SVGs files will have ids for specific strings to be replaced by real data.
+The images are created based on a set of svg templates. Several templates are available. They will be used in various usecases, depending on the number of matches to display, with special one for the two senior teams. The SVGs files have ids for specific strings to be replaced by real data.
 
 ### Data retrieval
 
-The match results will be retrieved from the official website of the Swiss Handball Federation (FSH). The exact url and parsing will be defined later.
+The match results will be retrieved from the official website of the Swiss Handball Federation (FSH). 
+Details of that mechanism can be found in Query.md.
 
 ### Names replacement
 
