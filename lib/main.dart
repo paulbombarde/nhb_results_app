@@ -4,13 +4,18 @@ import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'match.dart';
 import 'svg_image_generator.dart';
+import 'models/handball_models.dart';
+import 'services/handball_service.dart';
+import 'transformers/handball_transformer.dart';
+import 'screens/loading_screen.dart';
 
 void main() async {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -19,8 +24,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: SvgImage(),
+      title: 'NHB Results App',
+      theme: ThemeData(
+        useMaterial3: true,
+        primarySwatch: Colors.blue,
+        fontFamily: 'Barlow Condensed',
+      ),
+      home: const LoadingScreen(),
     );
   }
 }
@@ -35,31 +45,73 @@ class SvgImage extends StatefulWidget {
 
 class SvgImageState extends State<SvgImage> {
   Uint8List? img;
+  bool isLoading = false;
+  String errorMessage = '';
+  final HandballService _handballService = HandballService();
 
   @override
   Widget build(BuildContext context) {
-    if (img == null) {
+    if (img == null && !isLoading && errorMessage.isEmpty) {
       refreshImage();
     }
 
     return Scaffold(
-        appBar: AppBar(
-            title: const Text('HTML to Image Converter'),
-            actions: [ImageControls(imgState: this)]),
-        body: img == null ? Text("wait") : Image.memory(img!));
+      appBar: AppBar(
+        title: const Text('NHB Match Results'),
+        actions: [ImageControls(imgState: this)],
+      ),
+      body: Center(
+        child: isLoading
+          ? const CircularProgressIndicator()
+          : errorMessage.isNotEmpty
+            ? Text('Error: $errorMessage', style: const TextStyle(color: Colors.red))
+            : img == null
+              ? const Text("Generating image...")
+              : Image.memory(img!),
+      ),
+    );
   }
 
   Future<void> refreshImage() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
     try {
-      final randomMatches = getRandomMatches(4);
-      final image = await SvgImageGenerator.generateImageData('assets/www/results_4.svg', randomMatches);
+      // Get real handball games from the API
+      final games = await _handballService.getCompletedGames();
+      
+      if (games.isEmpty) {
+        setState(() {
+          errorMessage = 'No completed games found';
+          isLoading = false;
+        });
+        return;
+      }
+      
+      // Take up to 4 most recent games
+      final recentGames = games.take(4).toList();
+      
+      // Transform HandballGame objects to Match objects
+      final matches = HandballTransformer.fromHandballGames(recentGames);
+      
+      // Generate the image using the transformed matches
+      final image = await SvgImageGenerator.generateImageData(
+        'assets/www/results_${matches.length}.svg',
+        matches
+      );
+      
       setState(() {
         img = image;
+        isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading SVG from asset: $e');
+      debugPrint('Error generating image: $e');
       setState(() {
         img = null;
+        isLoading = false;
+        errorMessage = e.toString();
       });
     }
   }
@@ -87,6 +139,12 @@ class SvgImageState extends State<SvgImage> {
     } catch (e) {
       debugPrint('Error sharing image: $e');
     }
+  }
+  
+  @override
+  void dispose() {
+    _handballService.dispose();
+    super.dispose();
   }
 }
 
@@ -130,3 +188,4 @@ class ImageControls extends StatelessWidget {
             defaultTargetPlatform == foundation.TargetPlatform.android);
   }
 }
+

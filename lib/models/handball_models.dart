@@ -138,6 +138,24 @@ class HandballGame {
   String toString() {
     return 'HandballGame(gameNumber: $gameNumber, homeTeam: $homeTeamName, awayTeam: $awayTeamName, score: $homeTeamScore-$awayTeamScore, date: $gameDateTime, venue: $venueName)';
   }
+  
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! HandballGame) return false;
+    if (objectId == null || other.objectId == null) {
+      // If either objectId is null, compare all relevant fields
+      return other.gameNumber == gameNumber &&
+             other.homeTeamName == homeTeamName &&
+             other.awayTeamName == awayTeamName &&
+             other.gameDateTime == gameDateTime;
+    }
+    return other.objectId == objectId;
+  }
+  
+  @override
+  int get hashCode => objectId?.hashCode ??
+    Object.hash(gameNumber, homeTeamName, awayTeamName, gameDateTime);
 }
 
 /// Response wrapper for GraphQL games query

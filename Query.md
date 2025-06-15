@@ -1,4 +1,4 @@
-# Handball Results App
+# Handball Results Query
 
 A simplified handball data retrieval system that fetches game data from the Swiss Handball Federation's GraphQL API.
 
