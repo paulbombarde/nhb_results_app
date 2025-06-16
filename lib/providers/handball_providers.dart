@@ -30,7 +30,7 @@ final datesWithGamesProvider = FutureProvider<List<DateTime>>((ref) async {
     return dates;
   } catch (e) {
     ref.read(errorProvider.notifier).state = e.toString();
-    throw e;
+    rethrow;
   }
 });
 
@@ -120,7 +120,7 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
     
     // Choose appropriate template based on number of games
     final templateCount = matches.length > 4 ? 4 : matches.length;
-    final template = 'assets/www/results_${templateCount}.svg';
+    final template = 'assets/www/results_$templateCount.svg';
     
     // Generate the image
     return await SvgImageGenerator.generateImageData(template, matches);

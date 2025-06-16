@@ -6,7 +6,7 @@ import '../providers/handball_providers.dart';
 import 'results_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
-  const CalendarScreen({Key? key}) : super(key: key);
+  const CalendarScreen({super.key});
 
   @override
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();

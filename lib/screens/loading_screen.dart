@@ -5,7 +5,7 @@ import '../services/handball_service.dart';
 import 'calendar_screen.dart';
 
 class LoadingScreen extends ConsumerWidget {
-  const LoadingScreen({Key? key}) : super(key: key);
+  const LoadingScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

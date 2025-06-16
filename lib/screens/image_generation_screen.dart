@@ -12,9 +12,9 @@ class ImageGenerationScreen extends ConsumerWidget {
   final List<HandballGame> selectedGames;
   
   const ImageGenerationScreen({
-    Key? key,
+    super.key,
     required this.selectedGames,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,10 +104,10 @@ class ImageDisplay extends StatelessWidget {
   final VoidCallback onShare;
   
   const ImageDisplay({
-    Key? key,
+    super.key,
     required this.imageData,
     required this.onShare,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {

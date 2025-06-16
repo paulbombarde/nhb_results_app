@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'handball_models.dart';
 
 /// Model representing a date in the calendar

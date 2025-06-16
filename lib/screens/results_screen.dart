@@ -9,9 +9,9 @@ class ResultsScreen extends ConsumerWidget {
   final DateTime selectedDate;
   
   const ResultsScreen({
-    Key? key,
+    super.key,
     required this.selectedDate,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,9 +115,9 @@ class DateHeader extends StatelessWidget {
   final DateTime date;
   
   const DateHeader({
-    Key? key,
+    super.key,
     required this.date,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
@@ -151,11 +151,11 @@ class GameResultsList extends ConsumerWidget {
   final Function(HandballGame) onGameToggled;
   
   const GameResultsList({
-    Key? key,
+    super.key,
     required this.games,
     required this.selectedGames,
     required this.onGameToggled,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -184,11 +184,11 @@ class GameResultCard extends StatelessWidget {
   final VoidCallback onToggle;
   
   const GameResultCard({
-    Key? key,
+    super.key,
     required this.game,
     required this.isSelected,
     required this.onToggle,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
