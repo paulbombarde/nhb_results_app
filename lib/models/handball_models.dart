@@ -189,4 +189,26 @@ class HandballConfig {
     clubId: 330442,
     seasonId: 2024,
   );
+  
+  /// Create a copy of this config with optional new values
+  HandballConfig copyWith({
+    int? clubId,
+    int? seasonId,
+  }) {
+    return HandballConfig(
+      clubId: clubId ?? this.clubId,
+      seasonId: seasonId ?? this.seasonId,
+    );
+  }
+  
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is HandballConfig &&
+        other.clubId == clubId &&
+        other.seasonId == seasonId;
+  }
+
+  @override
+  int get hashCode => Object.hash(clubId, seasonId);
 }

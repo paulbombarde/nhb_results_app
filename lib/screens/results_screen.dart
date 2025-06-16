@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/handball_models.dart';
 import '../providers/handball_providers.dart';
 import 'image_generation_screen.dart';
+import 'configuration_screen.dart';
 
 class ResultsScreen extends ConsumerWidget {
   final DateTime selectedDate;
@@ -32,6 +33,18 @@ class ResultsScreen extends ConsumerWidget {
         leading: BackButton(
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ConfigurationScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

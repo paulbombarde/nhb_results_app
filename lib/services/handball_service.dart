@@ -8,14 +8,29 @@ class HandballService {
   // Cache for games to avoid repeated API calls
   List<HandballGame>? _cachedGames;
   DateTime? _lastFetchTime;
+  HandballConfig _currentConfig;
   
   // Cache expiration time (5 minutes)
   static const Duration _cacheExpiration = Duration(minutes: 5);
 
-  HandballService({HandballGraphQLClient? client})
-      : _client = client ?? HandballGraphQLClient();
+  HandballService({
+    HandballGraphQLClient? client,
+    HandballConfig? config,
+  }) : _client = client ?? HandballGraphQLClient(),
+       _currentConfig = config ?? HandballConfig.defaultConfig;
+       
+  /// Update the configuration and clear cache
+  void updateConfig(HandballConfig config) {
+    if (_currentConfig != config) {
+      _currentConfig = config;
+      clearCache();
+    }
+  }
+  
+  /// Get the current configuration
+  HandballConfig get currentConfig => _currentConfig;
 
-  /// Fetch all games for the default club and season with caching
+  /// Fetch all games for the current club and season with caching
   Future<List<HandballGame>> getAllGames() async {
     try {
       // Check if we have a valid cache
@@ -27,7 +42,7 @@ class HandballService {
       }
       
       // Fetch fresh data
-      final response = await _client.getGamesWithDefaults();
+      final response = await _client.getGamesWithDefaults(config: _currentConfig);
       
       // Update cache
       _cachedGames = response.games;

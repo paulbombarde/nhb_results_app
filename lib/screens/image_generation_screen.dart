@@ -7,6 +7,7 @@ import 'dart:io';
 
 import '../models/handball_models.dart';
 import '../providers/handball_providers.dart';
+import 'configuration_screen.dart';
 
 class ImageGenerationScreen extends ConsumerWidget {
   final List<HandballGame> selectedGames;
@@ -26,6 +27,18 @@ class ImageGenerationScreen extends ConsumerWidget {
         leading: BackButton(
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ConfigurationScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: imageAsync.when(
         data: (imageData) {

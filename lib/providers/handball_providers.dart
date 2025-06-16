@@ -6,9 +6,32 @@ import '../services/handball_service.dart';
 import '../svg_image_generator.dart';
 import '../transformers/handball_transformer.dart';
 
+/// Provider for the handball configuration
+final handballConfigProvider = StateNotifierProvider<HandballConfigNotifier, HandballConfig>((ref) {
+  return HandballConfigNotifier();
+});
+
+/// Notifier for handball configuration
+class HandballConfigNotifier extends StateNotifier<HandballConfig> {
+  HandballConfigNotifier() : super(HandballConfig.defaultConfig);
+  
+  void updateConfig({int? clubId, int? seasonId}) {
+    state = state.copyWith(
+      clubId: clubId,
+      seasonId: seasonId,
+    );
+  }
+  
+  void resetToDefaults() {
+    state = HandballConfig.defaultConfig;
+  }
+}
+
 /// Provider for the handball service
 final handballServiceProvider = Provider<HandballService>((ref) {
-  return HandballService();
+  // Watch the config provider to rebuild when config changes
+  final config = ref.watch(handballConfigProvider);
+  return HandballService(config: config);
 });
 
 /// Provider for loading state

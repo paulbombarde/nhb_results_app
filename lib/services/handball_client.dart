@@ -95,11 +95,12 @@ class HandballGraphQLClient {
     }
   }
 
-  /// Fetch games using default configuration
-  Future<HandballGamesResponse> getGamesWithDefaults() async {
+  /// Fetch games using provided configuration or default if not provided
+  Future<HandballGamesResponse> getGamesWithDefaults({HandballConfig? config}) async {
+    final configToUse = config ?? HandballConfig.defaultConfig;
     return getGames(
-      clubId: HandballConfig.defaultConfig.clubId,
-      seasonId: HandballConfig.defaultConfig.seasonId,
+      clubId: configToUse.clubId,
+      seasonId: configToUse.seasonId,
     );
   }
 
