@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 import '../providers/handball_providers.dart';
 import 'results_screen.dart';
 import 'configuration_screen.dart';
@@ -33,6 +32,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       appBar: AppBar(
         title: const Text('NHB Match Results'),
         actions: [
+          // Add refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh calendar data',
+            onPressed: () {
+              // Show a snackbar to provide feedback
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Refreshing calendar data...'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+              
+              // Get the handball service and clear its cache
+              final handballService = ref.read(handballServiceProvider);
+              handballService.clearCache();
+              
+              // Invalidate the provider to refresh the data
+              ref.invalidate(datesWithGamesProvider);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {

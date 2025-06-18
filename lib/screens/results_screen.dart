@@ -173,7 +173,6 @@ class GameResultsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the selected games to ensure the list rebuilds when selection changes
-    final currentSelectedGames = ref.watch(selectedGamesProvider);
     return ListView.builder(
       itemCount: games.length,
       padding: const EdgeInsets.all(8.0),

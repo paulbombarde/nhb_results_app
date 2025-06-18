@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/handball_providers.dart';
-import '../services/handball_service.dart';
 import 'calendar_screen.dart';
 
 class LoadingScreen extends ConsumerWidget {
