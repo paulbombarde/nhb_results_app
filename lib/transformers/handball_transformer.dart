@@ -27,7 +27,7 @@ class HandballTransformer {
 
   /// Convert a single HandballGame to a Match object
   /// Handles null values and formats data appropriately
-  static Match fromHandballGame(HandballGame game) {
+  static Match fromHandballGame(HandballGame game, [Map<String, String>? customReplacements]) {
     // Format the date
     final date = _formatDate(game.gameDateTime);
     
@@ -38,8 +38,8 @@ class HandballTransformer {
     final level = game.leagueShortName ?? game.groupShortName ?? 'Niveau inconnu';
     
     // Get team names with potential replacements
-    final team1 = _replaceTeamName(game.homeTeamName ?? 'Équipe inconnue');
-    final team2 = _replaceTeamName(game.awayTeamName ?? 'Équipe inconnue');
+    final team1 = _replaceTeamName(game.homeTeamName ?? 'Équipe inconnue', customReplacements);
+    final team2 = _replaceTeamName(game.awayTeamName ?? 'Équipe inconnue', customReplacements);
     
     // Get scores (or placeholder if not available)
     final score1 = game.homeTeamScore?.toString() ?? '-';
@@ -57,8 +57,8 @@ class HandballTransformer {
   }
 
   /// Convert a list of HandballGame objects to a list of Match objects
-  static List<Match> fromHandballGames(List<HandballGame> games) {
-    return games.map((game) => fromHandballGame(game)).toList();
+  static List<Match> fromHandballGames(List<HandballGame> games, [Map<String, String>? customReplacements]) {
+    return games.map((game) => fromHandballGame(game, customReplacements)).toList();
   }
   
   /// Format the date string from API format to display format
@@ -82,8 +82,10 @@ class HandballTransformer {
   }
   
   /// Replace team name if it exists in the replacement map
-  static String _replaceTeamName(String originalName) {
-    return teamNameReplacements[originalName] ?? originalName;
+  /// Uses custom replacements if provided, otherwise falls back to default replacements
+  static String _replaceTeamName(String originalName, [Map<String, String>? customReplacements]) {
+    final replacements = customReplacements ?? teamNameReplacements;
+    return replacements[originalName] ?? originalName;
   }
   
   /// Capitalize the first letter of a string

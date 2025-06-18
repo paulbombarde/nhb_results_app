@@ -9,10 +9,18 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'svg_image_generator.dart';
 import 'services/handball_service.dart';
+import 'services/storage_service.dart';
 import 'transformers/handball_transformer.dart';
 import 'screens/loading_screen.dart';
 
 void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize storage service
+  final storageService = StorageService();
+  
+  // Run the app with ProviderScope
   runApp(const ProviderScope(child: MyApp()));
 }
 

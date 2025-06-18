@@ -1,29 +1,70 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../models/calendar_models.dart';
 import '../models/handball_models.dart';
 import '../services/handball_service.dart';
+import '../services/storage_service.dart';
 import '../svg_image_generator.dart';
 import '../transformers/handball_transformer.dart';
 
+/// Provider for the storage service
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService();
+});
+
 /// Provider for the handball configuration
 final handballConfigProvider = StateNotifierProvider<HandballConfigNotifier, HandballConfig>((ref) {
-  return HandballConfigNotifier();
+  final storageService = ref.watch(storageServiceProvider);
+  return HandballConfigNotifier(storageService);
 });
 
 /// Notifier for handball configuration
 class HandballConfigNotifier extends StateNotifier<HandballConfig> {
-  HandballConfigNotifier() : super(HandballConfig.defaultConfig);
+  final StorageService _storageService;
   
-  void updateConfig({int? clubId, int? seasonId}) {
-    state = state.copyWith(
+  HandballConfigNotifier(this._storageService) : super(HandballConfig.defaultConfig) {
+    _loadFromStorage();
+  }
+  
+  /// Load configuration from persistent storage
+  Future<void> _loadFromStorage() async {
+    try {
+      final savedConfig = await _storageService.loadApiConfig();
+      if (savedConfig != null) {
+        state = savedConfig;
+      }
+    } catch (e) {
+      debugPrint('Error loading config from storage: $e');
+      // Keep default config if loading fails
+    }
+  }
+  
+  /// Update configuration and save to storage
+  Future<void> updateConfig({int? clubId, int? seasonId}) async {
+    final newState = state.copyWith(
       clubId: clubId,
       seasonId: seasonId,
     );
+    
+    state = newState;
+    
+    try {
+      await _storageService.saveApiConfig(newState);
+    } catch (e) {
+      debugPrint('Error saving config to storage: $e');
+    }
   }
   
-  void resetToDefaults() {
+  /// Reset to defaults and save to storage
+  Future<void> resetToDefaults() async {
     state = HandballConfig.defaultConfig;
+    
+    try {
+      await _storageService.saveApiConfig(HandballConfig.defaultConfig);
+    } catch (e) {
+      debugPrint('Error saving default config to storage: $e');
+    }
   }
 }
 
@@ -138,8 +179,11 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
   }
 
   try {
-    // Transform HandballGame objects to Match objects
-    final matches = HandballTransformer.fromHandballGames(selectedGames);
+    // Get current team replacements
+    final teamReplacements = ref.watch(teamReplacementsProvider);
+    
+    // Transform HandballGame objects to Match objects with custom replacements
+    final matches = HandballTransformer.fromHandballGames(selectedGames, teamReplacements);
     
     // Choose appropriate template based on number of games
     final templateCount = matches.length > 4 ? 4 : matches.length;
@@ -151,3 +195,69 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
     throw Exception('Failed to generate image: $e');
   }
 });
+
+/// Provider for team name replacements
+final teamReplacementsProvider = StateNotifierProvider<TeamReplacementsNotifier, Map<String, String>>((ref) {
+  final storageService = ref.watch(storageServiceProvider);
+  return TeamReplacementsNotifier(storageService);
+});
+
+/// Notifier for team name replacements
+class TeamReplacementsNotifier extends StateNotifier<Map<String, String>> {
+  final StorageService _storageService;
+  
+  TeamReplacementsNotifier(this._storageService) : super(Map<String, String>.from(HandballTransformer.teamNameReplacements)) {
+    _loadFromStorage();
+  }
+  
+  /// Load team replacements from persistent storage
+  Future<void> _loadFromStorage() async {
+    try {
+      final savedReplacements = await _storageService.loadTeamReplacements();
+      if (savedReplacements != null && savedReplacements.isNotEmpty) {
+        state = savedReplacements;
+      }
+    } catch (e) {
+      debugPrint('Error loading team replacements from storage: $e');
+      // Keep default replacements if loading fails
+    }
+  }
+  
+  /// Add a new team replacement or update an existing one
+  Future<void> addOrUpdateReplacement(String originalName, String replacementName) async {
+    final updatedMap = Map<String, String>.from(state);
+    updatedMap[originalName] = replacementName;
+    state = updatedMap;
+    
+    try {
+      await _storageService.saveTeamReplacements(updatedMap);
+    } catch (e) {
+      debugPrint('Error saving team replacements to storage: $e');
+    }
+  }
+  
+  /// Remove a team replacement
+  Future<void> removeReplacement(String originalName) async {
+    final updatedMap = Map<String, String>.from(state);
+    updatedMap.remove(originalName);
+    state = updatedMap;
+    
+    try {
+      await _storageService.saveTeamReplacements(updatedMap);
+    } catch (e) {
+      debugPrint('Error saving team replacements to storage: $e');
+    }
+  }
+  
+  /// Reset to default replacements
+  Future<void> resetToDefaults() async {
+    final defaultReplacements = Map<String, String>.from(HandballTransformer.teamNameReplacements);
+    state = defaultReplacements;
+    
+    try {
+      await _storageService.saveTeamReplacements(defaultReplacements);
+    } catch (e) {
+      debugPrint('Error saving default team replacements to storage: $e');
+    }
+  }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/handball_models.dart';
 import '../providers/handball_providers.dart';
+import '../transformers/handball_transformer.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
   const ConfigurationScreen({super.key});
@@ -10,10 +11,13 @@ class ConfigurationScreen extends ConsumerStatefulWidget {
   ConsumerState<ConfigurationScreen> createState() => _ConfigurationScreenState();
 }
 
-class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
+class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with SingleTickerProviderStateMixin {
   late TextEditingController _clubIdController;
   late TextEditingController _seasonIdController;
+  late TextEditingController _originalNameController;
+  late TextEditingController _replacementNameController;
   bool _hasChanges = false;
+  late TabController _tabController;
   
   @override
   void initState() {
@@ -21,6 +25,11 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     final config = ref.read(handballConfigProvider);
     _clubIdController = TextEditingController(text: config.clubId.toString());
     _seasonIdController = TextEditingController(text: config.seasonId.toString());
+    _originalNameController = TextEditingController();
+    _replacementNameController = TextEditingController();
+    
+    // Initialize tab controller
+    _tabController = TabController(length: 2, vsync: this);
     
     // Add listeners to detect changes
     _clubIdController.addListener(_checkForChanges);
@@ -31,6 +40,9 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
   void dispose() {
     _clubIdController.dispose();
     _seasonIdController.dispose();
+    _originalNameController.dispose();
+    _replacementNameController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
   
@@ -51,13 +63,18 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     }
   }
   
-  void _applyChanges() {
+  Future<void> _applyChanges() async {
     final newClubId = int.tryParse(_clubIdController.text);
     final newSeasonId = int.tryParse(_seasonIdController.text);
     
     if (newClubId != null && newSeasonId != null) {
+      // Show loading indicator
+      setState(() {
+        _hasChanges = false;
+      });
+      
       // Update the configuration
-      ref.read(handballConfigProvider.notifier).updateConfig(
+      await ref.read(handballConfigProvider.notifier).updateConfig(
         clubId: newClubId,
         seasonId: newSeasonId,
       );
@@ -66,23 +83,25 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
       ref.invalidate(datesWithGamesProvider);
       
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Configuration updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      // Reset the changes flag
-      setState(() {
-        _hasChanges = false;
-      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Configuration updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     }
   }
   
-  void _resetToDefaults() {
+  Future<void> _resetToDefaults() async {
+    // Show loading indicator
+    setState(() {
+      _hasChanges = false;
+    });
+    
     // Reset to default configuration
-    ref.read(handballConfigProvider.notifier).resetToDefaults();
+    await ref.read(handballConfigProvider.notifier).resetToDefaults();
     
     // Update text controllers
     final defaultConfig = HandballConfig.defaultConfig;
@@ -93,17 +112,272 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     ref.invalidate(datesWithGamesProvider);
     
     // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reset to default configuration'),
-        backgroundColor: Colors.blue,
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reset to default configuration'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+
+  // Show dialog to add or edit a team replacement
+  void _showTeamReplacementDialog({String? originalName, String? replacementName}) {
+    _originalNameController.text = originalName ?? '';
+    _replacementNameController.text = replacementName ?? '';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(originalName == null ? 'Add Team Replacement' : 'Edit Team Replacement'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _originalNameController,
+              decoration: const InputDecoration(
+                labelText: 'Original Team Name',
+                hintText: 'Enter the original team name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _replacementNameController,
+              decoration: const InputDecoration(
+                labelText: 'Replacement Name',
+                hintText: 'Enter the replacement name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final original = _originalNameController.text.trim();
+              final replacement = _replacementNameController.text.trim();
+              
+              if (original.isNotEmpty && replacement.isNotEmpty) {
+                // Add or update the replacement
+                await ref.read(teamReplacementsProvider.notifier).addOrUpdateReplacement(original, replacement);
+                
+                // Show success message
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(originalName == null
+                        ? 'Team replacement added successfully'
+                        : 'Team replacement updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
+  }
+  
+  // Reset team replacements to defaults
+  Future<void> _resetTeamReplacements() async {
+    await ref.read(teamReplacementsProvider.notifier).resetToDefaults();
     
-    // Reset the changes flag
-    setState(() {
-      _hasChanges = false;
-    });
+    // Show success message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Team replacements reset to defaults'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+  
+  // Build the API configuration tab
+  Widget _buildApiConfigTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'API Configuration',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Club ID field
+          TextField(
+            controller: _clubIdController,
+            decoration: const InputDecoration(
+              labelText: 'Club ID',
+              hintText: 'Enter the club ID',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          
+          // Season ID field
+          TextField(
+            controller: _seasonIdController,
+            decoration: const InputDecoration(
+              labelText: 'Season ID',
+              hintText: 'Enter the season ID',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 8),
+          
+          // Help text
+          const Text(
+            'Default: Club ID 330442 (Nyon HandBall La Côte), Season ID 2024',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Reset button
+              OutlinedButton(
+                onPressed: _resetToDefaults,
+                child: const Text('Reset to Defaults'),
+              ),
+              
+              // Apply button
+              ElevatedButton(
+                onPressed: _hasChanges ? _applyChanges : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _hasChanges ? Colors.blue : Colors.grey,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Apply Changes'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Build the team replacements tab
+  Widget _buildTeamReplacementsTab() {
+    final teamReplacements = ref.watch(teamReplacementsProvider);
+    final entries = teamReplacements.entries.toList();
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Team Name Replacements',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle),
+                onPressed: () => _showTeamReplacementDialog(),
+                tooltip: 'Add new team replacement',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Swipe left to delete a replacement',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Team replacements list
+          Expanded(
+            child: entries.isEmpty
+                ? const Center(child: Text('No team replacements defined'))
+                : ListView.builder(
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      return Dismissible(
+                        key: Key(entry.key),
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16.0),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                        ),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (direction) async {
+                          await ref.read(teamReplacementsProvider.notifier).removeReplacement(entry.key);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Team replacement removed'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            title: Text(entry.key),
+                            subtitle: Text('→ ${entry.value}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _showTeamReplacementDialog(
+                                originalName: entry.key,
+                                replacementName: entry.value,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          
+          // Reset button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: OutlinedButton(
+              onPressed: _resetTeamReplacements,
+              child: const Text('Reset to Default Replacements'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -114,78 +388,20 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
         leading: BackButton(
           onPressed: () => Navigator.of(context).pop(),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Handball Data Configuration',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Club ID field
-            TextField(
-              controller: _clubIdController,
-              decoration: const InputDecoration(
-                labelText: 'Club ID',
-                hintText: 'Enter the club ID',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            
-            // Season ID field
-            TextField(
-              controller: _seasonIdController,
-              decoration: const InputDecoration(
-                labelText: 'Season ID',
-                hintText: 'Enter the season ID',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            
-            // Help text
-            const Text(
-              'Default: Club ID 330442 (Nyon HandBall La Côte), Season ID 2024',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            // Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Reset button
-                OutlinedButton(
-                  onPressed: _resetToDefaults,
-                  child: const Text('Reset to Defaults'),
-                ),
-                
-                // Apply button
-                ElevatedButton(
-                  onPressed: _hasChanges ? _applyChanges : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _hasChanges ? Colors.blue : Colors.grey,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Apply Changes'),
-                ),
-              ],
-            ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'API Settings'),
+            Tab(text: 'Team Names'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildApiConfigTab(),
+          _buildTeamReplacementsTab(),
+        ],
       ),
     );
   }
