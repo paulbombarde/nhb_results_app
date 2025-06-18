@@ -141,3 +141,4 @@ coverage/
 !**/ios/**/default.perspectivev3
 
 devtools_options.yaml
+android/key.properties
