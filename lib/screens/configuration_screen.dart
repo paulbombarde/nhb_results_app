@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/handball_models.dart';
 import '../providers/handball_providers.dart';
-import '../transformers/handball_transformer.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
   const ConfigurationScreen({super.key});

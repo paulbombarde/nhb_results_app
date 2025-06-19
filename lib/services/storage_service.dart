@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/handball_models.dart';
-import '../transformers/handball_transformer.dart';
 
 /// Service for handling persistent storage of app configuration
 class StorageService {
