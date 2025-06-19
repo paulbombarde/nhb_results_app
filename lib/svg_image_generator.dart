@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:html_to_image/html_to_image.dart';
@@ -16,15 +18,19 @@ class SvgImageGenerator {
   static Future<Uint8List?> convertSvg(String template, List<Match> matches, int size) async {
     // Load SVG content from assets into memory
     final svgContent = await rootBundle.loadString(template);
+    return convertSvgFromString(svgContent, matches, size);
+  }
 
+  static Future<Uint8List?> convertSvgFromString(
+      String svgStringTemplate, List<Match> matches, int size) async {
     // Parse SVG as XML and replace text elements based on inkscape:label attributes
-    final modifiedSvgContent = _replaceSvgTextElements(svgContent, matches);
+    final modifiedSvgContent =
+        replaceSvgTextElements(svgStringTemplate, matches);
 
     // Wrap SVG content in HTML with proper font references
     final htmlContent = _htmlWrapper(modifiedSvgContent);
 
-    return HtmlToImage.tryConvertToImage(
-        content: htmlContent, width: size);
+    return HtmlToImage.tryConvertToImage(content: htmlContent, width: size);
   }
 
   /// Crops the generated image to remove white banner at the bottom
@@ -44,7 +50,7 @@ class SvgImageGenerator {
   }
 
   /// Replaces text elements in SVG based on their inkscape:label attributes
-  static String _replaceSvgTextElements(String svgContent, List<Match> matches) {
+  static String replaceSvgTextElements(String svgContent, List<Match> matches) {
     try {
       final document = XmlDocument.parse(svgContent);
       
@@ -55,6 +61,7 @@ class SvgImageGenerator {
       for (final textElement in textElements) {
         final label = textElement.getAttribute('inkscape:label');
         String? replacementText;
+        String? replacementColor;
         
         // Handle date field using the first match
         if (label == 'date' && matches.isNotEmpty) {
@@ -76,10 +83,12 @@ class SvgImageGenerator {
               // Map field names to match properties
               switch (fieldName) {
                 case 'team1':
-                  replacementText = match.team1;
+                  replacementText = match.fullTeam1();
+                  replacementColor = match.colorTeam1();
                   break;
                 case 'team2':
-                  replacementText = match.team2;
+                  replacementText = match.fullTeam2();
+                  replacementColor = match.colorTeam2();
                   break;
                 case 'score1':
                   replacementText = match.score1;
@@ -97,6 +106,7 @@ class SvgImageGenerator {
           final tspanElement = textElement.findElements('tspan').firstOrNull;
           if (tspanElement != null) {
             tspanElement.innerText = replacementText;
+            _updateColor(tspanElement, replacementColor);
           }
         }
       }
@@ -107,6 +117,32 @@ class SvgImageGenerator {
       // Return original content if parsing fails
       return svgContent;
     }
+  }
+
+  static void _updateColor(XmlElement elem, String? color) {
+    if (color != null) {
+      // Update the text color
+      String style = _updateStyleColor(elem.getAttribute("style"), color);
+      elem.setAttribute("style", style);
+    }
+  }
+
+  static String _updateStyleColor(style, color) {
+    if (style == null) {
+      return "fill:$color";
+    }
+
+    if (!style.contains("fill:")) {
+      return "$style;fill:$color";
+    }
+
+    List<String> elements = style.split(";");
+    List<String> updatedElements = [];
+    for (String element in elements) {
+      updatedElements.add(element.startsWith("fill") ? "fill:$color" : element);
+    }
+
+    return updatedElements.join(";");
   }
 
   /// Creates an HTML wrapper with proper font references for SVG content

@@ -18,6 +18,30 @@ class Match {
     required this.score1,
     required this.score2,
   });
+
+  String colorTeam1() {
+    return _teamColor(team1);
+  }
+
+  String colorTeam2() {
+    return _teamColor(team2);
+  }
+
+  String fullTeam1() {
+    return team1+_teamLevel(team1);
+  }
+
+  String fullTeam2() {
+    return team2+_teamLevel(team2);
+  }
+
+  static String _teamColor(String teamName) {
+    return (teamName.startsWith("NHB")) ? "#e0038c" : "#ffffff";
+  }
+
+  String _teamLevel(String teamName) {
+    return (teamName.startsWith("NHB")) ? " $level" : "";
+  }
 }
 
 // Dummy data for testing and development
