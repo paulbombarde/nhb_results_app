@@ -1,10 +1,20 @@
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../models/handball_models.dart';
 import '../match.dart';
 
 /// Transformer class to convert HandballGame objects to Match objects
 /// for use with the SVG image generator
 class HandballTransformer {
+  // Initialize French locale data
+  static bool _localeInitialized = false;
+  
+  static void _initializeLocale() {
+    if (!_localeInitialized) {
+      initializeDateFormatting('fr_FR', null);
+      _localeInitialized = true;
+    }
+  }
   /// Map of team name replacements for better display in templates
   /// Original team name -> Display name
   static const Map<String, String> teamNameReplacements = {
@@ -65,16 +75,22 @@ class HandballTransformer {
   /// Handles null or invalid date strings
   static String _formatDate(String? dateTimeString) {
     if (dateTimeString == null || dateTimeString.isEmpty) {
-      return 'Date inconnue';
+      return 'DATE INCONNUE';
     }
     
     try {
+      // Ensure French locale is initialized
+      _initializeLocale();
+      
       // Parse the input date string (format: 2024-09-08T17:30:00)
       final dateTime = DateTime.parse(dateTimeString);
       
-      // Format the date in French style
+      // Format the date in French style: day_in_week day_in_month month
       final formatter = DateFormat('EEEE d MMMM', 'fr_FR');
-      return _capitalizeFirstLetter(formatter.format(dateTime));
+      final formattedDate = formatter.format(dateTime);
+      
+      // Convert the entire date to uppercase
+      return formattedDate.toUpperCase();
     } catch (e) {
       // Return the original string if parsing fails
       return dateTimeString;
