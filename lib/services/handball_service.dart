@@ -30,6 +30,15 @@ class HandballService {
   /// Get the current configuration
   HandballConfig get currentConfig => _currentConfig;
 
+  /// Filter games to only include those where at least one team starts with "Nyon HandBall"
+  List<HandballGame> filterNyonHandballGames(List<HandballGame> games) {
+    return games.where((game) {
+      final homeTeamName = game.homeTeamName ?? '';
+      final awayTeamName = game.awayTeamName ?? '';
+      return homeTeamName.startsWith('Nyon HandBall') || awayTeamName.startsWith('Nyon HandBall');
+    }).toList();
+  }
+
   /// Fetch all games for the current club and season with caching
   Future<List<HandballGame>> getAllGames() async {
     try {
@@ -37,7 +46,7 @@ class HandballService {
       if (_cachedGames != null && _lastFetchTime != null) {
         final now = DateTime.now();
         if (now.difference(_lastFetchTime!) < _cacheExpiration) {
-          return _cachedGames!;
+          return filterNyonHandballGames(_cachedGames!);
         }
       }
       
@@ -48,7 +57,7 @@ class HandballService {
       _cachedGames = response.games;
       _lastFetchTime = DateTime.now();
       
-      return response.games;
+      return filterNyonHandballGames(response.games);
     } catch (e) {
       throw HandballServiceException('Failed to fetch games: $e');
     }
@@ -64,7 +73,7 @@ class HandballService {
         clubId: clubId,
         seasonId: seasonId,
       );
-      return response.games;
+      return filterNyonHandballGames(response.games);
     } catch (e) {
       throw HandballServiceException('Failed to fetch games: $e');
     }
@@ -90,7 +99,7 @@ class HandballService {
   /// Get games by league
   Future<List<HandballGame>> getGamesByLeague(String leagueShortName) async {
     final allGames = await getAllGames();
-    return allGames.where((game) => 
+    return allGames.where((game) =>
       game.leagueShortName?.toLowerCase() == leagueShortName.toLowerCase()
     ).toList();
   }
@@ -98,7 +107,7 @@ class HandballService {
   /// Get games by venue
   Future<List<HandballGame>> getGamesByVenue(String venueName) async {
     final allGames = await getAllGames();
-    return allGames.where((game) => 
+    return allGames.where((game) =>
       game.venueName?.toLowerCase().contains(venueName.toLowerCase()) == true
     ).toList();
   }
@@ -106,7 +115,7 @@ class HandballService {
   /// Get upcoming games (games without scores)
   Future<List<HandballGame>> getUpcomingGames() async {
     final allGames = await getAllGames();
-    return allGames.where((game) => 
+    return allGames.where((game) =>
       game.homeTeamScore == null && game.awayTeamScore == null
     ).toList();
   }
