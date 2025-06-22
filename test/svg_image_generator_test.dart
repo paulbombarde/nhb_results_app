@@ -211,9 +211,6 @@ void main() {
         ),
       ];
       
-      // Expected values
-      final expectedTeam1 = "NHB Team Test Level";
-      
       // Act
       final result = SvgImageGenerator.replaceSvgTextElements(invalidSvgString, testMatches);
       
@@ -243,9 +240,6 @@ void main() {
           score2: "20",
         ),
       ];
-      
-      // Expected values
-      final expectedTeam1 = "NHB Team Test Level";
       
       // Act
       final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
@@ -284,9 +278,6 @@ void main() {
         ),
       ];
       
-      // Expected values
-      final expectedTeam1 = "NHB Team Test Level";
-      
       // Act
       final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
       
@@ -323,9 +314,6 @@ void main() {
           score2: "20",
         ),
       ];
-      
-      // Expected values
-      final expectedTeam1 = "NHB Team Test Level";
       
       // Act
       final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);

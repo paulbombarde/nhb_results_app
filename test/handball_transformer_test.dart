@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nhb_results_app/models/handball_models.dart';
 import 'package:nhb_results_app/transformers/handball_transformer.dart';
-import 'package:nhb_results_app/match.dart';
 
 void main() {
   group('HandballTransformer', () {

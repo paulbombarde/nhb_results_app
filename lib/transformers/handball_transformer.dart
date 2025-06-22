@@ -103,10 +103,4 @@ class HandballTransformer {
     final replacements = customReplacements ?? teamNameReplacements;
     return replacements[originalName] ?? originalName;
   }
-  
-  /// Capitalize the first letter of a string
-  static String _capitalizeFirstLetter(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
-  }
 }
