@@ -138,7 +138,7 @@ class DateHeader extends StatelessWidget {
     
     return Container(
       padding: const EdgeInsets.all(16.0),
-      color: Theme.of(context).primaryColor.withOpacity(0.1),
+      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
       child: Row(
         children: [
           Icon(
@@ -230,6 +230,9 @@ class GameResultCard extends StatelessWidget {
         ),
       ],
     ).then((value) {
+      // Check if context is still mounted before using it
+      if (!context.mounted) return;
+      
       int tab = 0;
       String? elem;
       if (value == 'home') {
@@ -337,7 +340,7 @@ class GameResultCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(

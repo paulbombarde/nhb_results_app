@@ -198,7 +198,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
                 await ref.read(teamReplacementsProvider.notifier).addOrUpdateReplacement(original, replacement);
                 
                 // Show success message
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(originalName == null
@@ -397,7 +397,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
                         direction: DismissDirection.endToStart,
                         onDismissed: (direction) async {
                           await ref.read(teamReplacementsProvider.notifier).removeReplacement(entry.key);
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Team replacement removed'),
@@ -484,7 +484,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
                 await ref.read(levelReplacementsProvider.notifier).addOrUpdateReplacement(original, replacement);
                 
                 // Show success message
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(originalName == null
@@ -579,7 +579,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
                         direction: DismissDirection.endToStart,
                         onDismissed: (direction) async {
                           await ref.read(levelReplacementsProvider.notifier).removeReplacement(entry.key);
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Level replacement removed'),

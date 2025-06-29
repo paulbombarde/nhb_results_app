@@ -129,7 +129,7 @@ class SvgImageGenerator {
 
             // If the split point is a space, remove it, else the new span
             // looks weirdly indented.
-            String secondLine = replacementText!.substring(splitIndex);
+            String secondLine = replacementText.substring(splitIndex);
             while (secondLine.startsWith(' ')){
               secondLine = secondLine.substring(1);
             }
@@ -167,7 +167,7 @@ class SvgImageGenerator {
     }
   }
 
-  static String _updateStyleColor(style, color) {
+  static String _updateStyleColor(String? style, String color) {
     if (style == null) {
       return "fill:$color";
     }

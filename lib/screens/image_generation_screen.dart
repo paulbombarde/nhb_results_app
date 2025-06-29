@@ -94,10 +94,10 @@ class ImageGenerationScreen extends ConsumerWidget {
       await file.writeAsBytes(imageData);
       
       // Share the file
-      await Share.shareXFiles(
-        [XFile(file.path)],
+      await SharePlus.instance.share(ShareParams(
+        files: [XFile(file.path)],
         text: 'Handball match results',
-      );
+      ));
     } catch (e) {
       // Show error message
       if (context.mounted) {
