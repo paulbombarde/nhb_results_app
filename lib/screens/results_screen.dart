@@ -202,6 +202,46 @@ class GameResultCard extends StatelessWidget {
     required this.onToggle,
   });
   
+  void _showTeamOptionsMenu(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+    
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy + size.height,
+        position.dx + size.width,
+        position.dy,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'home',
+          child: Text('Edit "${game.homeTeamName}" replacement'),
+        ),
+        PopupMenuItem(
+          value: 'away',
+          child: Text('Edit "${game.awayTeamName}" replacement'),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+      
+      String teamName = value == 'home' ? game.homeTeamName! : game.awayTeamName!;
+      
+      // Navigate to configuration screen and open team replacement dialog
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ConfigurationScreen(
+            initialTab: 1, // Team Names tab
+            teamToEdit: teamName,
+          ),
+        ),
+      );
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -213,6 +253,9 @@ class GameResultCard extends StatelessWidget {
         child: InkWell(
           onTap: () {
             onToggle();
+          },
+          onLongPress: () {
+            _showTeamOptionsMenu(context);
           },
           child: Padding(
             padding: const EdgeInsets.all(12),

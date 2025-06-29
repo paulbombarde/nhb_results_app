@@ -4,7 +4,14 @@ import '../models/handball_models.dart';
 import '../providers/handball_providers.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
-  const ConfigurationScreen({super.key});
+  final int initialTab;
+  final String? teamToEdit;
+  
+  const ConfigurationScreen({
+    super.key,
+    this.initialTab = 0,
+    this.teamToEdit,
+  });
 
   @override
   ConsumerState<ConfigurationScreen> createState() => _ConfigurationScreenState();
@@ -27,12 +34,23 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
     _originalNameController = TextEditingController();
     _replacementNameController = TextEditingController();
     
-    // Initialize tab controller
-    _tabController = TabController(length: 2, vsync: this);
+    // Initialize tab controller with the initial tab from widget
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
     
     // Add listeners to detect changes
     _clubIdController.addListener(_checkForChanges);
     _seasonIdController.addListener(_checkForChanges);
+    
+    // If a team to edit was provided, open the edit dialog after the build is complete
+    if (widget.teamToEdit != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _editTeamReplacement(widget.teamToEdit!);
+      });
+    }
   }
   
   @override
@@ -199,6 +217,26 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
           content: Text('Team replacements reset to defaults'),
           backgroundColor: Colors.blue,
         ),
+      );
+    }
+  }
+  
+  // Find and edit a team replacement by original name
+  void _editTeamReplacement(String originalName) {
+    final teamReplacements = ref.read(teamReplacementsProvider);
+    
+    // Check if the team exists in replacements
+    if (teamReplacements.containsKey(originalName)) {
+      // Open edit dialog with existing replacement
+      _showTeamReplacementDialog(
+        originalName: originalName,
+        replacementName: teamReplacements[originalName],
+      );
+    } else {
+      // Open dialog with just the original name to create a new replacement
+      _showTeamReplacementDialog(
+        originalName: originalName,
+        replacementName: '',
       );
     }
   }
