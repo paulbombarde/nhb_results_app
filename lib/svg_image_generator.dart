@@ -103,9 +103,50 @@ class SvgImageGenerator {
         if (replacementText != null) {
           // Find the tspan element within the text element and replace its content
           final tspanElement = textElement.findElements('tspan').firstOrNull;
-          if (tspanElement != null) {
+          if (tspanElement == null) {
+            throw "Missing tspan in Text element to replace";
+          }
+          _updateColor(tspanElement, replacementColor);
+
+          int splitIndex = -1;
+          if (replacementText.length > 22) { // Magic!
+            // Find the split place: we search for the first 'split like' characater.
+            // If non is found, we leave the string intact. The user will have to edit
+            // the string and add one split character where it makes more sense.
+            int mid = (replacementText.length / 2).ceil();
+            splitIndex = replacementText.indexOf(RegExp(r'[ /\\-]'), mid);
+          }
+
+          if( splitIndex < 0) {
             tspanElement.innerText = replacementText;
-            _updateColor(tspanElement, replacementColor);
+          }
+          else {
+            final int offsetY = 80; // Yeah, magic number!
+            final initialY = double.parse(tspanElement.getAttribute('y')!);
+
+            tspanElement.innerText = replacementText.substring(0, splitIndex);
+            tspanElement.setAttribute('y', (initialY - offsetY).toString());
+
+            // If the split point is a space, remove it, else the new span
+            // looks weirdly indented.
+            String secondLine = replacementText!.substring(splitIndex);
+            while (secondLine.startsWith(' ')){
+              secondLine = secondLine.substring(1);
+            }
+
+            // Create a new tspan element for the second half of the text
+            final builder = XmlBuilder();
+            builder.element('tspan', nest: () {
+              builder.attribute('x', tspanElement.getAttribute('x')!);
+              builder.attribute('y', (initialY + offsetY).toString());
+              builder.attribute('sodipodi:role', 'line');
+              builder.attribute('style', tspanElement.getAttribute('style'));
+              builder.text(secondLine);
+            });
+            
+            // Add the new tspan to the text element
+            final newTspan = builder.buildFragment().firstChild!.copy();
+            textElement.children.add(newTspan);
           }
         }
       }

@@ -106,7 +106,7 @@ void main() {
         Match(
           date: "Test Date 1",
           place: "Test Place 1",
-          level: "Test Level 1",
+          level: "Level 1",
           team1: "NHB Team 1",
           team2: "Opponent 1",
           score1: "25",
@@ -115,7 +115,7 @@ void main() {
         Match(
           date: "Test Date 2",
           place: "Test Place 2",
-          level: "Test Level 2",
+          level: "Level 2",
           team1: "Team 2",
           team2: "NHB Team 2",
           score1: "18",
@@ -124,10 +124,10 @@ void main() {
       ];
       
       // Expected values
-      final expectedTeam1Match1 = "NHB Team 1 Test Level 1";
+      final expectedTeam1Match1 = "NHB Team 1 Level 1";
       final expectedTeam2Match1 = "Opponent 1";
       final expectedTeam1Match2 = "Team 2";
-      final expectedTeam2Match2 = "NHB Team 2 Test Level 2";
+      final expectedTeam2Match2 = "NHB Team 2 Level 2";
       
       // Act
       final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
@@ -323,5 +323,110 @@ void main() {
       expect(result, isNotNull);
       expect(result, isA<String>());
     });
+  });
+
+  void testSplitTspans(XmlElement textElement, String text1, String text2) {
+    // Should have two tspan elements now
+    final tspanElements = textElement.findElements('tspan').toList();
+    expect(tspanElements.length, equals(2), reason: 'Should have two tspan elements for long text');
+    
+    // Check the content of the tspans
+    final firstTspan = tspanElements[0];
+    final secondTspan = tspanElements[1];
+    
+    // The text should be split at a space, slash, dot, hyphen, or backslash
+    expect(firstTspan.innerText, equals(text1));
+    expect(secondTspan.innerText, equals(text2));
+    
+    // Check the y-coordinates
+    final initialY = 200.0;
+    final offsetY = 80.0;
+    expect(double.parse(firstTspan.getAttribute('y')!), equals(initialY - offsetY));
+    expect(double.parse(secondTspan.getAttribute('y')!), equals(initialY + offsetY));
+    
+    // Check that the style was copied
+    expect(secondTspan.getAttribute('style'), equals(firstTspan.getAttribute('style')));
+    
+    // Check that the x-coordinate was copied
+    expect(secondTspan.getAttribute('x'), equals(firstTspan.getAttribute('x')));
+  }
+
+  test('should split long text into two tspan elements', () {
+    // Arrange
+    final testSvgString = '''
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+      <text inkscape:label="match1-team1" style="font-size:40px" x="100" y="200">
+        <tspan x="100" y="200" style="font-weight:bold;fill:#ffffff;text-anchor:middle">Default Team 1</tspan>
+      </text>
+      <text inkscape:label="match1-team2" style="font-size:40px" x="500" y="200">
+        <tspan x="500" y="200" style="font-weight:bold;fill:#ffffff;text-anchor:middle">Default Team 2</tspan>
+      </text>
+    </svg>
+    ''';
+    
+    final testMatches = [
+      Match(
+        date: "Test Date",
+        place: "Test Place",
+        level: "Test Level",
+        team1: "NHB Team with a very long name that needs to be split",
+        team2: "Opponent Team Also-With a long name",
+        score1: "25",
+        score2: "20",
+      ),
+    ];
+    
+    // Act
+    final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+    
+    // Assert
+    final document = XmlDocument.parse(result);
+    final texts = document.findAllElements('text');
+
+    final team1Element = texts.firstWhere((element) => element.getAttribute('inkscape:label') == 'match1-team1');
+    testSplitTspans(team1Element, "NHB Team with a very long name that", "needs to be split Test Level");
+
+    final team2Element = texts.firstWhere((element) => element.getAttribute('inkscape:label') == 'match1-team2');
+    testSplitTspans(team2Element, "Opponent Team Also", "-With a long name");
+  });
+  
+  test('should not split text if no suitable split character is found', () {
+    // Arrange
+    final testSvgString = '''
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+      <text inkscape:label="match1-team1" style="font-size:40px" x="100" y="200">
+        <tspan x="100" y="200" style="font-weight:bold;fill:#ffffff;text-anchor:middle">Default Team 1</tspan>
+      </text>
+    </svg>
+    ''';
+    
+    // Create a long team name with no spaces or split characters after the midpoint
+    final testMatches = [
+      Match(
+        date: "Test Date",
+        place: "Test Place",
+        level: "Test Level",
+        team1: "TeamWithNoSpacesAfterMidpointShouldNotBeSplit",
+        team2: "NHB Team",
+        score1: "25",
+        score2: "20",
+      ),
+    ];
+    
+    // Act
+    final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+    
+    // Assert
+    final document = XmlDocument.parse(result);
+    final team1Element = document.findAllElements('text')
+        .firstWhere((element) => element.getAttribute('inkscape:label') == 'match1-team1');
+    
+    // Should have only one tspan element since no split character was found
+    final tspanElements = team1Element.findElements('tspan').toList();
+    expect(tspanElements.length, equals(1), reason: 'Should have only one tspan when no split character is found');
+    
+    // The full text should be in the single tspan
+    final expectedText = "TeamWithNoSpacesAfterMidpointShouldNotBeSplit";
+    expect(tspanElements[0].innerText, equals(expectedText));
   });
 }
