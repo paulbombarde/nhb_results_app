@@ -26,6 +26,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Clear any selected games when returning to the calendar view
+    // This prevents selections from persisting across different dates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(selectedGamesProvider.notifier).clearSelection();
+    });
+    
     final datesAsync = ref.watch(datesWithGamesProvider);
     
     return Scaffold(
