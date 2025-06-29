@@ -5,12 +5,12 @@ import '../providers/handball_providers.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
   final int initialTab;
-  final String? teamToEdit;
+  final String? elemToEdit;
   
   const ConfigurationScreen({
     super.key,
     this.initialTab = 0,
-    this.teamToEdit,
+    this.elemToEdit,
   });
 
   @override
@@ -22,6 +22,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
   late TextEditingController _seasonIdController;
   late TextEditingController _originalNameController;
   late TextEditingController _replacementNameController;
+  late TextEditingController _originalLevelController;
+  late TextEditingController _replacementLevelController;
   bool _hasChanges = false;
   late TabController _tabController;
   
@@ -33,10 +35,12 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
     _seasonIdController = TextEditingController(text: config.seasonId.toString());
     _originalNameController = TextEditingController();
     _replacementNameController = TextEditingController();
+    _originalLevelController = TextEditingController();
+    _replacementLevelController = TextEditingController();
     
     // Initialize tab controller with the initial tab from widget
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
       initialIndex: widget.initialTab,
     );
@@ -46,10 +50,17 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
     _seasonIdController.addListener(_checkForChanges);
     
     // If a team to edit was provided, open the edit dialog after the build is complete
-    if (widget.teamToEdit != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _editTeamReplacement(widget.teamToEdit!);
-      });
+    if (widget.elemToEdit != null) {
+      if ( widget.initialTab == 1 ) { // team tab
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _editTeamReplacement(widget.elemToEdit!);
+        });
+      }
+      else if (widget.initialTab == 2 ) { // level tab
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _editLevelReplacement(widget.elemToEdit!);
+        });
+      }
     }
   }
   
@@ -59,6 +70,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
     _seasonIdController.dispose();
     _originalNameController.dispose();
     _replacementNameController.dispose();
+    _originalLevelController.dispose();
+    _replacementLevelController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -226,19 +239,27 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
     final teamReplacements = ref.read(teamReplacementsProvider);
     
     // Check if the team exists in replacements
-    if (teamReplacements.containsKey(originalName)) {
-      // Open edit dialog with existing replacement
-      _showTeamReplacementDialog(
-        originalName: originalName,
-        replacementName: teamReplacements[originalName],
-      );
-    } else {
-      // Open dialog with just the original name to create a new replacement
-      _showTeamReplacementDialog(
-        originalName: originalName,
-        replacementName: '',
-      );
-    }
+    final teamReplacement = teamReplacements[originalName] ?? originalName;
+
+    // Open dialog
+    _showTeamReplacementDialog(
+      originalName: originalName,
+      replacementName: teamReplacement,
+    );
+  }
+  
+  // Find and edit a team replacement by original name
+  void _editLevelReplacement(String originalName) {
+    final levelReplacements = ref.read(levelReplacementsProvider);
+    
+    // Check if the team exists in replacements
+    final levelReplacement = levelReplacements[originalName] ?? originalName;
+
+    // Open dialog
+    _showLevelReplacementDialog(
+      originalName: originalName,
+      replacementName: levelReplacement,
+    );
   }
   
   // Build the API configuration tab
@@ -416,6 +437,188 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
       ),
     );
   }
+  
+  // Show dialog to add or edit a level replacement
+  void _showLevelReplacementDialog({String? originalName, String? replacementName}) {
+    _originalLevelController.text = originalName ?? '';
+    _replacementLevelController.text = replacementName ?? '';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(originalName == null ? 'Add Level Replacement' : 'Edit Level Replacement'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _originalLevelController,
+              decoration: const InputDecoration(
+                labelText: 'Original Level Name',
+                hintText: 'Enter the original level name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _replacementLevelController,
+              decoration: const InputDecoration(
+                labelText: 'Replacement Name',
+                hintText: 'Enter the replacement name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final original = _originalLevelController.text.trim();
+              final replacement = _replacementLevelController.text.trim();
+              
+              if (original.isNotEmpty && replacement.isNotEmpty) {
+                // Add or update the replacement
+                await ref.read(levelReplacementsProvider.notifier).addOrUpdateReplacement(original, replacement);
+                
+                // Show success message
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(originalName == null
+                        ? 'Level replacement added successfully'
+                        : 'Level replacement updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Reset level replacements to defaults
+  Future<void> _resetLevelReplacements() async {
+    await ref.read(levelReplacementsProvider.notifier).resetToDefaults();
+    
+    // Show success message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Level replacements reset to defaults'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+  
+  // Build the level replacements tab
+  Widget _buildLevelReplacementsTab() {
+    final levelReplacements = ref.watch(levelReplacementsProvider);
+    final entries = levelReplacements.entries.toList();
+    
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Level Name Replacements',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle),
+                onPressed: () => _showLevelReplacementDialog(),
+                tooltip: 'Add new level replacement',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Swipe left to delete a replacement',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Level replacements list
+          Expanded(
+            child: entries.isEmpty
+                ? const Center(child: Text('No level replacements defined'))
+                : ListView.builder(
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      return Dismissible(
+                        key: Key(entry.key),
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 16.0),
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.white,
+                          ),
+                        ),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (direction) async {
+                          await ref.read(levelReplacementsProvider.notifier).removeReplacement(entry.key);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Level replacement removed'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            title: Text(entry.key),
+                            subtitle: Text('→ ${entry.value}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _showLevelReplacementDialog(
+                                originalName: entry.key,
+                                replacementName: entry.value,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          
+          // Reset button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: OutlinedButton(
+              onPressed: _resetLevelReplacements,
+              child: const Text('Reset Level Replacements'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -430,6 +633,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
           tabs: const [
             Tab(text: 'API Settings'),
             Tab(text: 'Team Names'),
+            Tab(text: 'Levels'),
           ],
         ),
       ),
@@ -438,6 +642,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> with 
         children: [
           _buildApiConfigTab(),
           _buildTeamReplacementsTab(),
+          _buildLevelReplacementsTab(),
         ],
       ),
     );

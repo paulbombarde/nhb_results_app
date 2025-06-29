@@ -131,5 +131,98 @@ void main() {
       // Assert
       expect(match.date, equals('not-a-date'));
     });
+    
+    test('should apply team name replacements correctly', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Original Team 1',
+        awayTeamName: 'Original Team 2',
+        venueName: 'Test Venue',
+        leagueShortName: 'Test League',
+      );
+      
+      final customReplacements = {
+        'Original Team 1': 'Replaced Team 1',
+        'Original Team 2': 'Replaced Team 2',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(game, customReplacements);
+      
+      // Assert
+      expect(match.team1, equals('Replaced Team 1'));
+      expect(match.team2, equals('Replaced Team 2'));
+    });
+    
+    test('should apply level name replacements correctly', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Original Level',
+      );
+      
+      final teamReplacements = <String, String>{};
+      final levelReplacements = {
+        'Original Level': 'Replaced Level',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(game, teamReplacements, levelReplacements);
+      
+      // Assert
+      expect(match.level, equals('Replaced Level'));
+    });
+    
+    test('should apply both team and level replacements correctly', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Original Team 1',
+        awayTeamName: 'Original Team 2',
+        venueName: 'Test Venue',
+        leagueShortName: 'Original Level',
+      );
+      
+      final teamReplacements = {
+        'Original Team 1': 'Replaced Team 1',
+        'Original Team 2': 'Replaced Team 2',
+      };
+      
+      final levelReplacements = {
+        'Original Level': 'Replaced Level',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(game, teamReplacements, levelReplacements);
+      
+      // Assert
+      expect(match.team1, equals('Replaced Team 1'));
+      expect(match.team2, equals('Replaced Team 2'));
+      expect(match.level, equals('Replaced Level'));
+    });
+    
+    test('should handle empty level replacements map correctly', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Original Level',
+      );
+      
+      final teamReplacements = <String, String>{};
+      final levelReplacements = <String, String>{};
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(game, teamReplacements, levelReplacements);
+      
+      // Assert
+      expect(match.level, equals('Original Level'));
+    });
   });
 }

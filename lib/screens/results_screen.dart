@@ -224,18 +224,34 @@ class GameResultCard extends StatelessWidget {
           value: 'away',
           child: Text('Edit "${game.awayTeamName}" replacement'),
         ),
+        PopupMenuItem(
+          value: 'level',
+          child: Text('Edit "${game.leagueShortName}" replacement'),
+        ),
       ],
     ).then((value) {
-      if (value == null) return;
+      int tab = 0;
+      String? elem;
+      if (value == 'home') {
+        tab = 1;
+        elem = game.homeTeamName;
+      }
+      else if (value == 'away') {
+        tab = 1;
+        elem = game.awayTeamName;
+      }
+      else if (value == 'level') {
+        tab = 2;
+        elem = game.leagueShortName;
+      }
+      else { return; }
       
-      String teamName = value == 'home' ? game.homeTeamName! : game.awayTeamName!;
-      
-      // Navigate to configuration screen and open team replacement dialog
+      // Navigate to configuration screen and open replacement dialog
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => ConfigurationScreen(
-            initialTab: 1, // Team Names tab
-            teamToEdit: teamName,
+            initialTab: tab,
+            elemToEdit: elem,
           ),
         ),
       );

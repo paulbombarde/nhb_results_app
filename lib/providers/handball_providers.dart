@@ -178,11 +178,12 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
   }
 
   try {
-    // Get current team replacements
+    // Get current team and level replacements
     final teamReplacements = ref.watch(teamReplacementsProvider);
+    final levelReplacements = ref.watch(levelReplacementsProvider);
     
     // Transform HandballGame objects to Match objects with custom replacements
-    final matches = HandballTransformer.fromHandballGames(selectedGames, teamReplacements);
+    final matches = HandballTransformer.fromHandballGames(selectedGames, teamReplacements, levelReplacements);
     
     // Choose appropriate template based on number of games
     final templateCount = matches.length > 4 ? 4 : matches.length;
@@ -257,6 +258,72 @@ class TeamReplacementsNotifier extends StateNotifier<Map<String, String>> {
       await _storageService.saveTeamReplacements(defaultReplacements);
     } catch (e) {
       debugPrint('Error saving default team replacements to storage: $e');
+    }
+  }
+}
+
+/// Provider for level name replacements
+final levelReplacementsProvider = StateNotifierProvider<LevelReplacementsNotifier, Map<String, String>>((ref) {
+  final storageService = ref.watch(storageServiceProvider);
+  return LevelReplacementsNotifier(storageService);
+});
+
+/// Notifier for level name replacements
+class LevelReplacementsNotifier extends StateNotifier<Map<String, String>> {
+  final StorageService _storageService;
+  
+  LevelReplacementsNotifier(this._storageService) : super({}) {
+    _loadFromStorage();
+  }
+  
+  /// Load level replacements from persistent storage
+  Future<void> _loadFromStorage() async {
+    try {
+      final savedReplacements = await _storageService.loadLevelReplacements();
+      if (savedReplacements != null && savedReplacements.isNotEmpty) {
+        state = savedReplacements;
+      }
+    } catch (e) {
+      debugPrint('Error loading level replacements from storage: $e');
+      // Keep empty replacements if loading fails
+    }
+  }
+  
+  /// Add a new level replacement or update an existing one
+  Future<void> addOrUpdateReplacement(String originalName, String replacementName) async {
+    final updatedMap = Map<String, String>.from(state);
+    updatedMap[originalName] = replacementName;
+    state = updatedMap;
+    
+    try {
+      await _storageService.saveLevelReplacements(updatedMap);
+    } catch (e) {
+      debugPrint('Error saving level replacements to storage: $e');
+    }
+  }
+  
+  /// Remove a level replacement
+  Future<void> removeReplacement(String originalName) async {
+    final updatedMap = Map<String, String>.from(state);
+    updatedMap.remove(originalName);
+    state = updatedMap;
+    
+    try {
+      await _storageService.saveLevelReplacements(updatedMap);
+    } catch (e) {
+      debugPrint('Error saving level replacements to storage: $e');
+    }
+  }
+  
+  /// Reset to empty replacements
+  Future<void> resetToDefaults() async {
+    final emptyReplacements = <String, String>{};
+    state = emptyReplacements;
+    
+    try {
+      await _storageService.saveLevelReplacements(emptyReplacements);
+    } catch (e) {
+      debugPrint('Error saving empty level replacements to storage: $e');
     }
   }
 }

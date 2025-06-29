@@ -37,19 +37,20 @@ class HandballTransformer {
 
   /// Convert a single HandballGame to a Match object
   /// Handles null values and formats data appropriately
-  static Match fromHandballGame(HandballGame game, [Map<String, String>? customReplacements]) {
+  static Match fromHandballGame(HandballGame game, [Map<String, String>? customTeamReplacements, Map<String, String>? customLevelReplacements]) {
     // Format the date
     final date = _formatDate(game.gameDateTime);
     
     // Get venue/place
     final place = game.venueName ?? 'Lieu inconnu';
     
-    // Get league/level
-    final level = game.leagueShortName ?? game.groupShortName ?? 'Niveau inconnu';
+    // Get league/level with potential replacements
+    final originalLevel = game.leagueShortName ?? game.groupShortName ?? 'Niveau inconnu';
+    final level = _replaceLevelName(originalLevel, customLevelReplacements);
     
     // Get team names with potential replacements
-    final team1 = _replaceTeamName(game.homeTeamName ?? 'Équipe inconnue', customReplacements);
-    final team2 = _replaceTeamName(game.awayTeamName ?? 'Équipe inconnue', customReplacements);
+    final team1 = _replaceTeamName(game.homeTeamName ?? 'Équipe inconnue', customTeamReplacements);
+    final team2 = _replaceTeamName(game.awayTeamName ?? 'Équipe inconnue', customTeamReplacements);
     
     // Get scores (or placeholder if not available)
     final score1 = game.homeTeamScore?.toString() ?? '-';
@@ -67,8 +68,8 @@ class HandballTransformer {
   }
 
   /// Convert a list of HandballGame objects to a list of Match objects
-  static List<Match> fromHandballGames(List<HandballGame> games, [Map<String, String>? customReplacements]) {
-    return games.map((game) => fromHandballGame(game, customReplacements)).toList();
+  static List<Match> fromHandballGames(List<HandballGame> games, [Map<String, String>? customTeamReplacements, Map<String, String>? customLevelReplacements]) {
+    return games.map((game) => fromHandballGame(game, customTeamReplacements, customLevelReplacements)).toList();
   }
   
   /// Format the date string from API format to display format
@@ -102,5 +103,13 @@ class HandballTransformer {
   static String _replaceTeamName(String originalName, [Map<String, String>? customReplacements]) {
     final replacements = customReplacements ?? teamNameReplacements;
     return replacements[originalName] ?? originalName;
+  }
+  
+  /// Replace level name if it exists in the replacement map
+  static String _replaceLevelName(String originalName, [Map<String, String>? customReplacements]) {
+    if (customReplacements == null || customReplacements.isEmpty) {
+      return originalName;
+    }
+    return customReplacements[originalName] ?? originalName;
   }
 }

@@ -8,6 +8,7 @@ class StorageService {
   // Keys for SharedPreferences
   static const String _apiConfigKey = 'api_config';
   static const String _teamReplacementsKey = 'team_replacements';
+  static const String _levelReplacementsKey = 'level_replacements';
 
   /// Singleton instance
   static final StorageService _instance = StorageService._internal();
@@ -90,10 +91,40 @@ class StorageService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_apiConfigKey);
       await prefs.remove(_teamReplacementsKey);
+      await prefs.remove(_levelReplacementsKey);
       return true;
     } catch (e) {
       debugPrint('Error clearing storage data: $e');
       return false;
+    }
+  }
+
+  /// Save level replacements to persistent storage
+  Future<bool> saveLevelReplacements(Map<String, String> replacements) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return await prefs.setString(_levelReplacementsKey, jsonEncode(replacements));
+    } catch (e) {
+      debugPrint('Error saving level replacements: $e');
+      return false;
+    }
+  }
+
+  /// Load level replacements from persistent storage
+  Future<Map<String, String>?> loadLevelReplacements() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final replacementsString = prefs.getString(_levelReplacementsKey);
+      
+      if (replacementsString == null) {
+        return null;
+      }
+      
+      final Map<String, dynamic> decodedMap = jsonDecode(replacementsString);
+      return Map<String, String>.from(decodedMap);
+    } catch (e) {
+      debugPrint('Error loading level replacements: $e');
+      return null;
     }
   }
 }
