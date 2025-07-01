@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -22,14 +24,30 @@ class SvgImageGenerator {
 
   static Future<Uint8List?> convertSvgFromString(
       String svgStringTemplate, List<Match> matches, int size) async {
-    // Parse SVG as XML and replace text elements based on inkscape:label attributes
-    final modifiedSvgContent =
-        replaceSvgTextElements(svgStringTemplate, matches);
+    // Parse SVG as XML and replace text elements and sponsor images
+    final modifiedSvgContent = await _processTemplate(svgStringTemplate, matches);
 
     // Wrap SVG content in HTML with proper font references
     final htmlContent = _htmlWrapper(modifiedSvgContent);
 
     return HtmlToImage.tryConvertToImage(content: htmlContent, width: size);
+  }
+
+  /// Process the SVG template by replacing text elements and sponsor images
+  static Future<String> _processTemplate(String svgContent, List<Match> matches) async {
+    try {
+      final document = XmlDocument.parse(svgContent);
+
+      // First replace text elements
+      replaceXmlTextElements(document, matches);
+      
+      // Then replace sponsor images
+      await _replaceSponsorImages(document);
+      return document.toXmlString();
+    } catch (e) {
+      debugPrint('Error processing SVG template: $e');
+      return svgContent;
+    }
   }
 
   /// Crops the generated image to remove white banner at the bottom
@@ -47,12 +65,9 @@ class SvgImageGenerator {
     
     return im.encodePng(croppedImg);
   }
-
-  /// Replaces text elements in SVG based on their inkscape:label attributes
-  static String replaceSvgTextElements(String svgContent, List<Match> matches) {
-    try {
-      final document = XmlDocument.parse(svgContent);
       
+  /// Replaces text elements in SVG based on their inkscape:label attributes
+  static void replaceXmlTextElements(XmlDocument document, List<Match> matches) {
       // Find all text elements with inkscape:label attributes
       final textElements = document.findAllElements('text')
           .where((element) => element.getAttribute('inkscape:label') != null);
@@ -150,13 +165,6 @@ class SvgImageGenerator {
           }
         }
       }
-      
-      return document.toXmlString();
-    } catch (e) {
-      debugPrint('Error parsing/modifying SVG: $e');
-      // Return original content if parsing fails
-      return svgContent;
-    }
   }
 
   static void _updateColor(XmlElement elem, String? color) {
@@ -183,6 +191,92 @@ class SvgImageGenerator {
     }
 
     return updatedElements.join(";");
+  }
+
+  /// Lists all sponsor images available in the assets/sponsors folder
+  static Future<List<String>> _getSponsorImages() async {
+    try {
+      // Get the asset manifest
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+      
+      // Filter for sponsor images
+      final sponsorImages = manifestMap.keys
+          .where((String key) => key.startsWith('assets/sponsors/') && 
+                               (key.endsWith('.png') || key.endsWith('.jpg')))
+          .toList();
+      
+      return sponsorImages;
+    } catch (e) {
+      debugPrint('Error loading sponsor images: $e');
+      return [];
+    }
+  }
+  
+  /// Converts an image asset to base64 string
+  static Future<String?> _imageAssetToBase64(String assetPath) async {
+    try {
+      final ByteData data = await rootBundle.load(assetPath);
+      final Uint8List bytes = data.buffer.asUint8List();
+      return base64Encode(bytes);
+    } catch (e) {
+      debugPrint('Error converting image to base64: $e');
+      return null;
+    }
+  }
+
+  /// Replaces sponsor images in the SVG with random images from assets/sponsors
+  static Future<void> _replaceSponsorImages(XmlDocument document) async {
+    try {
+      // Get list of available sponsor images
+      final sponsorImages = await _getSponsorImages();
+      if (sponsorImages.isEmpty) {
+        debugPrint('No sponsor images found');
+        return;
+      }
+      
+      // Find all image elements with inkscape:label attributes for sponsors
+      final imageElements = document.findAllElements('image')
+          .where((element) => 
+              element.getAttribute('inkscape:label') == 'sponsor1' || 
+              element.getAttribute('inkscape:label') == 'sponsor2');
+      
+      final random = Random();
+      
+      for (final imageElement in imageElements) {
+        // Select a random sponsor image
+        if (sponsorImages.isEmpty) break;
+        final randomIndex = random.nextInt(sponsorImages.length);
+        final selectedImage = sponsorImages[randomIndex];
+        
+        // Read data
+        final ByteData data = await rootBundle.load(selectedImage);
+        final Uint8List bytes = data.buffer.asUint8List();
+
+        // Convert image to base64
+        final base64Image = base64Encode(bytes);
+        
+        // Update the xlink:href attribute with the new base64 image
+        final String mimeType = selectedImage.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        imageElement.setAttribute('xlink:href', 'data:$mimeType;base64,$base64Image');
+
+        // Get image height and width, apply the correct ratio and keep the image in place.
+        final image = im.decodeImage(bytes);
+        final initial_h = image!.height;
+
+        final svg_width = double.parse(imageElement.getAttribute('height')!) * image.width / image.height;
+        final svg_dx = 0.5 * (double.parse(imageElement.getAttribute('width')!) - svg_width);
+        final svg_x = double.parse(imageElement.getAttribute('x')!) + svg_dx;
+
+        imageElement.setAttribute('x', svg_x.toString());
+        imageElement.setAttribute('width', svg_width.toString());
+        
+        // Remove the selected image from the list to avoid duplicates
+        sponsorImages.removeAt(randomIndex);
+      }
+    } catch (e) {
+      debugPrint('Error replacing sponsor images: $e');
+    }
   }
 
   /// Creates an HTML wrapper with proper font references for SVG content

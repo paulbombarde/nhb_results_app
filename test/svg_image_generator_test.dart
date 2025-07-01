@@ -3,6 +3,13 @@ import 'package:nhb_results_app/match.dart';
 import 'package:nhb_results_app/svg_image_generator.dart';
 import 'package:xml/xml.dart';
 
+
+String replaceSvgTextElements(String svgContent, List<Match> matches) {
+   final document = XmlDocument.parse(svgContent);
+   SvgImageGenerator.replaceXmlTextElements(document, matches);
+   return document.toXmlString();
+}
+
 void main() {
   group('SvgImageGenerator.replaceSvgTextElements', () {
     test('should replace date and match data in SVG content', () {
@@ -44,7 +51,7 @@ void main() {
       final expectedTeam2 = "Opponent Team"; // fullTeam2() doesn't add level to non-NHB teams
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+      final result = replaceSvgTextElements(testSvgString, testMatches);
       
       // Assert
       expect(result, contains('Test Date'));
@@ -130,7 +137,7 @@ void main() {
       final expectedTeam2Match2 = "NHB Team 2 Level 2";
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+      final result = replaceSvgTextElements(testSvgString, testMatches);
       
       // Assert
       // Parse the result to verify structure
@@ -173,7 +180,7 @@ void main() {
       final emptyMatches = <Match>[];
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, emptyMatches);
+      final result = replaceSvgTextElements(testSvgString, emptyMatches);
       
       // Assert
       // The original SVG should be returned unchanged
@@ -212,7 +219,7 @@ void main() {
       ];
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(invalidSvgString, testMatches);
+      final result = replaceSvgTextElements(invalidSvgString, testMatches);
       
       // Assert
       // The original SVG should be returned unchanged
@@ -242,7 +249,7 @@ void main() {
       ];
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+      final result = replaceSvgTextElements(testSvgString, testMatches);
       
       // Assert
       // The match3 elements should remain unchanged since we only have 1 match (index out of bounds)
@@ -279,7 +286,7 @@ void main() {
       ];
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+      final result = replaceSvgTextElements(testSvgString, testMatches);
       
       // Assert
       // Elements with malformed labels should remain unchanged
@@ -316,7 +323,7 @@ void main() {
       ];
       
       // Act
-      final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+      final result = replaceSvgTextElements(testSvgString, testMatches);
       
       // Assert
       // The method should not crash when encountering text elements without tspan
@@ -377,7 +384,7 @@ void main() {
     ];
     
     // Act
-    final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+    final result = replaceSvgTextElements(testSvgString, testMatches);
     
     // Assert
     final document = XmlDocument.parse(result);
@@ -414,7 +421,7 @@ void main() {
     ];
     
     // Act
-    final result = SvgImageGenerator.replaceSvgTextElements(testSvgString, testMatches);
+    final result = replaceSvgTextElements(testSvgString, testMatches);
     
     // Assert
     final document = XmlDocument.parse(result);
