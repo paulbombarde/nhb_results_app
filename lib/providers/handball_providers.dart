@@ -191,9 +191,9 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
     
     // Choose appropriate template based on number of games
     final templateCount = matches.length > 4 ? 4 : matches.length;
-    String template = 'assets/www/results_$templateCount.svg';
+    String template = 'assets/templates/results_$templateCount.svg';
     if(matches.length == 1 && matches.first.template != null) {
-      template = 'assets/www/results_${matches.first.template}.svg';
+      template = 'assets/templates/results_${matches.first.template}.svg';
     }
     
     // Generate the image
