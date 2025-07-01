@@ -111,7 +111,7 @@ class _LevelReplacementsTabState extends ConsumerState<LevelReplacementsTab> {
     await ref.read(levelReplacementsProvider.notifier).resetToDefaults();
     
     // Show success message
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Level replacements reset to defaults'),

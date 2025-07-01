@@ -97,10 +97,15 @@ class SvgImageState extends State<SvgImage> {
       
       // Transform HandballGame objects to Match objects
       final matches = HandballTransformer.fromHandballGames(recentGames);
+
+      String svgAssetPath = 'assets/www/results_${matches.length}.svg';
+      if(matches.length == 1 && matches.first.template != null) {
+        svgAssetPath = 'assets/www/results_${matches.first.template}.svg';
+      }
       
       // Generate the image using the transformed matches
       final image = await SvgImageGenerator.generateImageData(
-        'assets/www/results_${matches.length}.svg',
+        svgAssetPath,
         matches
       );
       

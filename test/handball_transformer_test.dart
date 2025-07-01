@@ -224,5 +224,110 @@ void main() {
       // Assert
       expect(match.level, equals('Original Level'));
     });
+
+    test('should set template to null when seniorTeamLevelsToTemplates is not provided', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Test League',
+      );
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(game);
+      
+      // Assert
+      expect(match.template, isNull);
+    });
+
+    test('should set template correctly when seniorTeamLevelsToTemplates is provided', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Test League',
+      );
+      
+      final teamReplacements = <String, String>{};
+      final levelReplacements = <String, String>{};
+      final seniorTeamLevelsToTemplates = {
+        'Test League': 'template_1',
+        'Another League': 'template_2',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(
+        game,
+        teamReplacements,
+        levelReplacements,
+        seniorTeamLevelsToTemplates
+      );
+      
+      // Assert
+      expect(match.template, equals('template_1'));
+    });
+
+    test('should set template to null when level is not in seniorTeamLevelsToTemplates', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Test League',
+      );
+      
+      final teamReplacements = <String, String>{};
+      final levelReplacements = <String, String>{};
+      final seniorTeamLevelsToTemplates = {
+        'Another League': 'template_2',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(
+        game,
+        teamReplacements,
+        levelReplacements,
+        seniorTeamLevelsToTemplates
+      );
+      
+      // Assert
+      expect(match.template, isNull);
+    });
+
+    test('should apply level replacements before looking up template', () {
+      // Arrange
+      final game = HandballGame(
+        gameDateTime: '2024-01-15T18:30:00',
+        homeTeamName: 'Home Team',
+        awayTeamName: 'Away Team',
+        venueName: 'Test Venue',
+        leagueShortName: 'Original Level',
+      );
+      
+      final teamReplacements = <String, String>{};
+      final levelReplacements = {
+        'Original Level': 'Replaced Level',
+      };
+      final seniorTeamLevelsToTemplates = {
+        'Replaced Level': 'template_for_replaced_level',
+      };
+      
+      // Act
+      final match = HandballTransformer.fromHandballGame(
+        game,
+        teamReplacements,
+        levelReplacements,
+        seniorTeamLevelsToTemplates
+      );
+      
+      // Assert
+      expect(match.level, equals('Replaced Level'));
+      expect(match.template, equals('template_for_replaced_level'));
+    });
   });
 }

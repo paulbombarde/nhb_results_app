@@ -111,7 +111,7 @@ class _TeamReplacementsTabState extends ConsumerState<TeamReplacementsTab> {
     await ref.read(teamReplacementsProvider.notifier).resetToDefaults();
     
     // Show success message
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Team replacements reset to defaults'),

@@ -29,7 +29,7 @@ class HandballConfigNotifier extends StateNotifier<HandballConfig> {
   /// Load configuration from persistent storage
   Future<void> _loadFromStorage() async {
     try {
-      final savedConfig = await _storageService.loadApiConfig();
+      final savedConfig = await _storageService.loadSettings();
       if (savedConfig != null) {
         state = savedConfig;
       }
@@ -40,8 +40,10 @@ class HandballConfigNotifier extends StateNotifier<HandballConfig> {
   }
   
   /// Update configuration and save to storage
-  Future<void> updateConfig({int? clubId, int? seasonId}) async {
+  Future<void> updateConfig({String? seniorMaleLevel, String? seniorFemaleLevel, int? clubId, int? seasonId}) async {
     final newState = state.copyWith(
+      seniorMaleLevel: seniorMaleLevel,
+      seniorFemaleLevel: seniorFemaleLevel,
       clubId: clubId,
       seasonId: seasonId,
     );
@@ -181,13 +183,18 @@ final imageGenerationProvider = FutureProvider.autoDispose.family<Uint8List?, Li
     // Get current team and level replacements
     final teamReplacements = ref.watch(teamReplacementsProvider);
     final levelReplacements = ref.watch(levelReplacementsProvider);
+    final settings = ref.watch(handballConfigProvider);
+    final seniorTeamLevels = { settings.seniorMaleLevel: "h1", settings.seniorFemaleLevel: "d1"};
     
     // Transform HandballGame objects to Match objects with custom replacements
-    final matches = HandballTransformer.fromHandballGames(selectedGames, teamReplacements, levelReplacements);
+    final matches = HandballTransformer.fromHandballGames(selectedGames, teamReplacements, levelReplacements, seniorTeamLevels);
     
     // Choose appropriate template based on number of games
     final templateCount = matches.length > 4 ? 4 : matches.length;
-    final template = 'assets/www/results_$templateCount.svg';
+    String template = 'assets/www/results_$templateCount.svg';
+    if(matches.length == 1 && matches.first.template != null) {
+      template = 'assets/www/results_${matches.first.template}.svg';
+    }
     
     // Generate the image
     return await SvgImageGenerator.generateImageData(template, matches);

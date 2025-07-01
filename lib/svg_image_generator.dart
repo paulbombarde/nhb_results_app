@@ -8,15 +8,15 @@ import 'match.dart';
 
 class SvgImageGenerator {
   /// Main method to generate image data from SVG template and match data
-  static Future<Uint8List?> generateImageData(String template, List<Match> matches, {int size = 1080}) async {
-    final image = await convertSvg(template, matches, size);
+  static Future<Uint8List?> generateImageData(String templateAssetPath, List<Match> matches, {int size = 1080}) async {
+    final image = await convertSvg(templateAssetPath, matches, size);
     return cropImage(image!);
   }
 
   /// Converts SVG template with match data to image
-  static Future<Uint8List?> convertSvg(String template, List<Match> matches, int size) async {
+  static Future<Uint8List?> convertSvg(String templateAssetPath, List<Match> matches, int size) async {
     // Load SVG content from assets into memory
-    final svgContent = await rootBundle.loadString(template);
+    final svgContent = await rootBundle.loadString(templateAssetPath);
     return convertSvgFromString(svgContent, matches, size);
   }
 

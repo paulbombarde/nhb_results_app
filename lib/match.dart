@@ -8,6 +8,7 @@ class Match {
   final String team2;
   final String score1;
   final String score2;
+  final String? template;
 
   Match({
     required this.date,
@@ -17,6 +18,7 @@ class Match {
     required this.team2,
     required this.score1,
     required this.score2,
+    this.template,
   });
 
   String colorTeam1() {

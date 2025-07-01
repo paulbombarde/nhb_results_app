@@ -11,6 +11,8 @@ class ApiConfigTab extends ConsumerStatefulWidget {
 }
 
 class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
+  late TextEditingController _seniorMaleLevelController;
+  late TextEditingController _seniorFemaleLevelController;
   late TextEditingController _clubIdController;
   late TextEditingController _seasonIdController;
   bool _hasChanges = false;
@@ -19,16 +21,22 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
   void initState() {
     super.initState();
     final config = ref.read(handballConfigProvider);
+    _seniorMaleLevelController = TextEditingController(text: config.seniorMaleLevel);
+    _seniorFemaleLevelController = TextEditingController(text: config.seniorFemaleLevel);
     _clubIdController = TextEditingController(text: config.clubId.toString());
     _seasonIdController = TextEditingController(text: config.seasonId.toString());
     
     // Add listeners to detect changes
+    _seniorMaleLevelController.addListener(_checkForChanges);
+    _seniorFemaleLevelController.addListener(_checkForChanges);
     _clubIdController.addListener(_checkForChanges);
     _seasonIdController.addListener(_checkForChanges);
   }
   
   @override
   void dispose() {
+    _seniorMaleLevelController.dispose();
+    _seniorFemaleLevelController.dispose();
     _clubIdController.dispose();
     _seasonIdController.dispose();
     super.dispose();
@@ -38,11 +46,16 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
     final config = ref.read(handballConfigProvider);
     final newClubId = int.tryParse(_clubIdController.text);
     final newSeasonId = int.tryParse(_seasonIdController.text);
+    final newSeniorMaleLevel = _seniorMaleLevelController.text;
+    final newSeniorFemaleLevel = _seniorFemaleLevelController.text;
     
-    final hasChanges = 
-        newClubId != null && 
-        newSeasonId != null && 
-        (newClubId != config.clubId || newSeasonId != config.seasonId);
+    final hasChanges =
+        newClubId != null &&
+        newSeasonId != null &&
+        (newClubId != config.clubId ||
+         newSeasonId != config.seasonId ||
+         newSeniorMaleLevel != config.seniorMaleLevel ||
+         newSeniorFemaleLevel != config.seniorFemaleLevel);
     
     if (_hasChanges != hasChanges) {
       setState(() {
@@ -54,8 +67,10 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
   Future<void> _applyChanges() async {
     final newClubId = int.tryParse(_clubIdController.text);
     final newSeasonId = int.tryParse(_seasonIdController.text);
+    final newSeniorMaleLevel = _seniorMaleLevelController.text;
+    final newSeniorFemaleLevel = _seniorFemaleLevelController.text;
     
-    if (newClubId != null && newSeasonId != null) {
+    if (newClubId != null || newSeasonId != null) {
       // Show loading indicator
       setState(() {
         _hasChanges = false;
@@ -63,6 +78,8 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
       
       // Update the configuration
       await ref.read(handballConfigProvider.notifier).updateConfig(
+        seniorMaleLevel: newSeniorMaleLevel,
+        seniorFemaleLevel: newSeniorFemaleLevel,
         clubId: newClubId,
         seasonId: newSeasonId,
       );
@@ -71,7 +88,7 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
       ref.invalidate(datesWithGamesProvider);
       
       // Show success message
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Configuration updated successfully'),
@@ -93,6 +110,8 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
     
     // Update text controllers
     final defaultConfig = HandballConfig.defaultConfig;
+    _seniorMaleLevelController.text = defaultConfig.seniorMaleLevel;
+    _seniorFemaleLevelController.text = defaultConfig.seniorFemaleLevel;
     _clubIdController.text = defaultConfig.clubId.toString();
     _seasonIdController.text = defaultConfig.seasonId.toString();
     
@@ -100,7 +119,7 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
     ref.invalidate(datesWithGamesProvider);
     
     // Show success message
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Reset to default configuration'),
@@ -117,6 +136,39 @@ class _ApiConfigTabState extends ConsumerState<ApiConfigTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Senior Teams',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Senior Male League field
+          TextField(
+            controller: _seniorMaleLevelController,
+            decoration: const InputDecoration(
+              labelText: 'Senior Male League',
+              hintText: 'Enter the league',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.text,
+          ),
+          const SizedBox(height: 16),
+          
+          // Senior Female League field
+          TextField(
+            controller: _seniorFemaleLevelController,
+            decoration: const InputDecoration(
+              labelText: 'Senior Female League',
+              hintText: 'Enter the league',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.text,
+          ),
+          const SizedBox(height: 16),
+
           const Text(
             'API Configuration',
             style: TextStyle(

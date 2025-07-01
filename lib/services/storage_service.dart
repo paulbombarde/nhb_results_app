@@ -6,7 +6,7 @@ import '../models/handball_models.dart';
 /// Service for handling persistent storage of app configuration
 class StorageService {
   // Keys for SharedPreferences
-  static const String _apiConfigKey = 'api_config';
+  static const String _settingsKey = 'settings';
   static const String _teamReplacementsKey = 'team_replacements';
   static const String _levelReplacementsKey = 'level_replacements';
 
@@ -24,11 +24,13 @@ class StorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final configMap = {
+        'seniorMaleLevel': config.seniorMaleLevel,
+        'seniorFemaleLevel': config.seniorFemaleLevel,
         'clubId': config.clubId,
         'seasonId': config.seasonId,
       };
       
-      return await prefs.setString(_apiConfigKey, jsonEncode(configMap));
+      return await prefs.setString(_settingsKey, jsonEncode(configMap));
     } catch (e) {
       debugPrint('Error saving API config: $e');
       return false;
@@ -36,10 +38,10 @@ class StorageService {
   }
 
   /// Load API configuration from persistent storage
-  Future<HandballConfig?> loadApiConfig() async {
+  Future<HandballConfig?> loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final configString = prefs.getString(_apiConfigKey);
+      final configString = prefs.getString(_settingsKey);
       
       if (configString == null) {
         return null;
@@ -47,6 +49,8 @@ class StorageService {
       
       final configMap = jsonDecode(configString) as Map<String, dynamic>;
       return HandballConfig(
+        seniorMaleLevel: configMap['seniorMaleLevel'] ?? "",
+        seniorFemaleLevel: configMap['seniorFemaleLevel'] ?? "",
         clubId: configMap['clubId'] as int,
         seasonId: configMap['seasonId'] as int,
       );
@@ -89,7 +93,7 @@ class StorageService {
   Future<bool> clearAllData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_apiConfigKey);
+      await prefs.remove(_settingsKey);
       await prefs.remove(_teamReplacementsKey);
       await prefs.remove(_levelReplacementsKey);
       return true;

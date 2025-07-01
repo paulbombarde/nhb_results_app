@@ -176,26 +176,36 @@ class HandballGamesResponse {
 
 /// Configuration for handball data retrieval
 class HandballConfig {
+  final String seniorMaleLevel;
+  final String seniorFemaleLevel;
   final int clubId;
   final int seasonId;
 
   const HandballConfig({
+    required this.seniorMaleLevel,
+    required this.seniorFemaleLevel,
     required this.clubId,
     required this.seasonId,
   });
 
   /// Default configuration for NHB (Nyon Handball - La Cote)
   static const HandballConfig defaultConfig = HandballConfig(
+    seniorMaleLevel: '',
+    seniorFemaleLevel: '',
     clubId: 330442,
     seasonId: 2024,
   );
   
   /// Create a copy of this config with optional new values
   HandballConfig copyWith({
+    String? seniorMaleLevel,
+    String? seniorFemaleLevel,
     int? clubId,
     int? seasonId,
   }) {
     return HandballConfig(
+      seniorMaleLevel: seniorMaleLevel ?? this.seniorMaleLevel,
+      seniorFemaleLevel: seniorFemaleLevel ?? this.seniorFemaleLevel,
       clubId: clubId ?? this.clubId,
       seasonId: seasonId ?? this.seasonId,
     );
@@ -205,10 +215,12 @@ class HandballConfig {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is HandballConfig &&
+        other.seniorMaleLevel == seniorMaleLevel &&
+        other.seniorFemaleLevel == seniorFemaleLevel &&
         other.clubId == clubId &&
         other.seasonId == seasonId;
   }
 
   @override
-  int get hashCode => Object.hash(clubId, seasonId);
+  int get hashCode => Object.hash(seniorMaleLevel, seniorFemaleLevel, clubId, seasonId);
 }
