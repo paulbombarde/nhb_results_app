@@ -58,6 +58,19 @@ This project supports multiple platforms. For platform-specific instructions, re
 - [Run on Web](https://docs.flutter.dev/get-started/web)
 - [Run on Desktop](https://docs.flutter.dev/desktop)
 
+## Installing on Android
+
+```
+flutter devicesflut
+flutter build apk --split-per-abi
+flutter install
+```
+
+In case of conflict:
+
+```
+sudo adb uninstall nhb_results_app
+```
 
 ## Flutter resources for reference
 
