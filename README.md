@@ -61,7 +61,7 @@ This project supports multiple platforms. For platform-specific instructions, re
 ## Installing on Android
 
 ```
-flutter devicesflut
+flutter devices
 flutter build apk --split-per-abi
 flutter install
 ```
